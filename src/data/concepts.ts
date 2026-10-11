@@ -1,0 +1,57 @@
+import { ConceptItem } from '@/types';
+
+export const STARTER_ITEMS: ConceptItem[] = [
+  {
+    id: 'consistent-hashing',
+    title: 'Consistent Hashing & Virtual Nodes',
+    category: 'System Design',
+    url: 'https://en.wikipedia.org/wiki/Consistent_hashing',
+    notes: 'Hash ring distribution technique that minimizes key remapping when cache or storage nodes join or leave.',
+    tags: ['system-design', 'distributed-systems'],
+    createdAt: '2026-10-01T00:00:00Z',
+  },
+  {
+    id: 'forgetting-curve',
+    title: 'Ebbinghaus Forgetting Curve & Spaced Repetition',
+    category: 'Learning Science',
+    url: 'https://en.wikipedia.org/wiki/Forgetting_curve',
+    notes: 'Memory retention decays exponentially over time without review; reviewing at expanding intervals flattens the decay curve.',
+    tags: ['learning', 'cognition', 'memory'],
+    createdAt: '2026-10-02T00:00:00Z',
+  },
+  {
+    id: 'cap-theorem',
+    title: 'CAP Theorem & PACELC Trade-offs',
+    category: 'Distributed Systems',
+    url: 'https://en.wikipedia.org/wiki/CAP_theorem',
+    notes: 'In network partition (P), choose Consistency (C) or Availability (A). Else (E), trade off Latency (L) vs Consistency (C).',
+    tags: ['distributed-systems', 'architecture'],
+    createdAt: '2026-10-03T00:00:00Z',
+  },
+  {
+    id: 'raft-consensus',
+    title: 'Raft Consensus Protocol',
+    category: 'Distributed Systems',
+    url: 'https://raft.github.io/',
+    notes: 'Leader election terms, randomized heartbeats/timeouts, and replicated state machine write logs.',
+    tags: ['distributed-systems', 'consensus'],
+    createdAt: '2026-10-04T00:00:00Z',
+  },
+  {
+    id: 'database-indexing',
+    title: 'B-Tree vs LSM-Tree Storage Engines',
+    category: 'Database Internals',
+    notes: 'B-Trees optimize for point lookups with in-place updates; LSM-Trees optimize for high write throughput using append-only logs and SSTables.',
+    tags: ['databases', 'storage-engines'],
+    createdAt: '2026-10-05T00:00:00Z',
+  },
+  {
+    id: 'feynman-technique',
+    title: 'The Feynman Learning Technique',
+    category: 'Mental Models',
+    url: 'https://fs.blog/feynman-technique/',
+    notes: 'Explain a complex concept in plain, jargon-free language to a beginner to immediately isolate gaps in understanding.',
+    tags: ['mental-models', 'learning'],
+    createdAt: '2026-10-06T00:00:00Z',
+  },
+];
