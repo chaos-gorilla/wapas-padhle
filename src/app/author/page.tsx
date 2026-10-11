@@ -72,69 +72,63 @@ export default function AuthorPage() {
       title: 'Discovery Call',
       url: 'https://topmate.io/arai_19999/2350229',
       tag: '15 Min Alignment',
-      tagColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60',
+      tagColor: 'bg-emerald-100 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-200 border-2 border-zinc-900',
       icon: Compass,
       description:
         'A quick sync to discuss your career goals, identify preparation bottlenecks, and map out the right mentorship strategy.',
-      cta: 'Book Discovery Call',
+      cta: 'Book Discovery Call ➔',
     },
     {
       title: 'Video Call with Abhishek',
       url: 'https://topmate.io/arai_19999/2346816',
       tag: '1:1 Deep Dive Session',
-      tagColor: 'bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/60',
+      tagColor: 'bg-sky-100 text-sky-950 dark:bg-sky-950 dark:text-sky-200 border-2 border-zinc-900',
       icon: Video,
       description:
         'Comprehensive 1:1 mentoring covering Distributed Systems, DSA problem solving, resume revamp, or mock interview simulation.',
-      cta: 'Book Video Call',
+      cta: 'Book Video Call ➔',
     },
     {
       title: 'Succeed at Your Job',
       url: 'https://topmate.io/arai_19999/2350247',
       tag: 'Engineering Growth & Promotion',
-      tagColor: 'bg-purple-50 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/60',
+      tagColor: 'bg-amber-100 text-amber-950 dark:bg-amber-950 dark:text-amber-200 border-2 border-zinc-900',
       icon: Briefcase,
       description:
         'Actionable playbook for navigating tech company dynamics, driving high-impact technical initiatives, and leveling up to Senior/Staff roles.',
-      cta: 'Book Career Strategy Call',
+      cta: 'Book Career Strategy Call ➔',
     },
     {
       title: 'Ask Me Anything over DM',
       url: 'https://topmate.io/arai_19999/2346802/',
       tag: 'Async Direct Query',
-      tagColor: 'bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300 border-amber-200/60 dark:border-amber-800/60',
+      tagColor: 'bg-rose-100 text-rose-950 dark:bg-rose-950 dark:text-rose-200 border-2 border-zinc-900',
       icon: MessageSquare,
       description:
         'Async direct messaging on Topmate. Ask about offer negotiation, architectural reviews, quick code feedback, or career direction.',
-      cta: 'Send Direct Question',
+      cta: 'Send Direct Question ➔',
     },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fbfbfd] dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-emerald-500/20 relative overflow-hidden">
-      {/* Calm ambient background breathing aura */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-10 right-1/4 w-[600px] h-[350px] bg-emerald-500/[0.04] dark:bg-emerald-500/[0.06] rounded-full blur-[140px] animate-calm-pulse" />
-        <div className="absolute bottom-20 left-10 w-[500px] h-[350px] bg-indigo-500/[0.03] dark:bg-indigo-500/[0.04] rounded-full blur-[130px]" />
-      </div>
-
-      {/* Top Navbar */}
-      <header className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-[#f8f6f0] dark:bg-[#111113] text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-yellow-200 relative">
+      {/* Top Retro Navbar */}
+      <header className="border-b-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] sticky top-0 z-30">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link
             href="/"
             onClick={() => playClickSound()}
-            className="flex items-center space-x-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer group"
+            className="retro-btn flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Wapas Padhle</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>&lt; RETURN TO WAPAS PADHLE</span>
           </Link>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="p-1.5 rounded-xl text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer active:scale-95"
+              className="retro-btn p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer"
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -144,44 +138,53 @@ export default function AuthorPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8 relative z-10">
-        {/* Captivating Discount Banner */}
-        <section className="relative overflow-hidden rounded-3xl border border-emerald-300/80 dark:border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-emerald-500/15 dark:from-emerald-950/40 dark:via-zinc-900/60 dark:to-emerald-950/30 p-6 sm:p-7 shadow-sm transition-all">
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-40 h-40 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
+        {/* Retro Discount Window */}
+        <section className="retro-box rounded-xl bg-amber-100 dark:bg-amber-950/40 p-5 sm:p-7 space-y-4">
+          {/* Window Bar */}
+          <div className="flex items-center justify-between border-b-2 border-zinc-900 dark:border-zinc-700 pb-2.5 font-mono text-xs font-bold">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-zinc-900" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block border border-zinc-900" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-zinc-900" />
+              <span className="ml-1 text-zinc-900 dark:text-white uppercase font-bold tracking-wider">
+                COUPON_CODE.TXT • 20% DISCOUNT
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900">
+              SPECIAL OFFER
+            </span>
+          </div>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold border border-emerald-300/60 dark:border-emerald-700/60">
-                <Gift className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Special Learner Discount • 20% OFF</span>
-              </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="space-y-1.5">
               <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
                 Unlock 20% Off on All Topmate Offerings
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 max-w-xl leading-relaxed">
-                Use code <span className="font-bold text-emerald-700 dark:text-emerald-400 font-mono">WAPASPADHLE20</span> at checkout on any mentorship session, system design deep dive, or 1:1 call.
+              <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 max-w-xl leading-relaxed">
+                Use code <strong className="font-mono text-zinc-950 dark:text-white bg-amber-200 dark:bg-amber-900 px-1 py-0.5 rounded border border-zinc-900">WAPASPADHLE20</strong> at checkout on any mentorship session, system design deep dive, or 1:1 call.
               </p>
             </div>
 
             {/* Code Box & 1-Click Copy */}
             <div className="flex items-center gap-2 self-start md:self-center shrink-0">
-              <div className="flex items-center space-x-2 bg-white dark:bg-zinc-950 px-4 py-2.5 rounded-2xl border border-emerald-300 dark:border-emerald-800/80 shadow-xs">
-                <span className="font-mono font-bold text-sm sm:text-base text-zinc-900 dark:text-white tracking-wider">
+              <div className="flex items-center space-x-2 bg-white dark:bg-zinc-900 px-3.5 py-2 rounded-lg border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]">
+                <span className="font-mono font-black text-sm sm:text-base text-zinc-900 dark:text-white tracking-wider">
                   WAPASPADHLE20
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer shadow-xs"
+                  className="retro-btn flex items-center space-x-1 px-3 py-1.5 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
                 >
                   {copied ? (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>Copied!</span>
+                      <span>COPIED!</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>Copy Code</span>
+                      <span>COPY</span>
                     </>
                   )}
                 </button>
@@ -190,58 +193,74 @@ export default function AuthorPage() {
           </div>
         </section>
 
-        {/* Profile Hero Card */}
-        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/60 backdrop-blur-md p-6 sm:p-8 shadow-sm space-y-6">
+        {/* Profile Hero Window */}
+        <section className="retro-box rounded-xl bg-white dark:bg-zinc-900 p-6 sm:p-8 space-y-6">
+          {/* Window bar */}
+          <div className="flex items-center justify-between border-b-2 border-zinc-900 dark:border-zinc-700 pb-2.5 font-mono text-xs font-bold text-zinc-600 dark:text-zinc-400">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block border border-zinc-900" />
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block border border-zinc-900" />
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block border border-zinc-900" />
+              <span className="ml-1 text-zinc-900 dark:text-white uppercase font-bold tracking-wider">
+                AUTHOR_PROFILE.HTM
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-900">
+              SCALE WITH RAI
+            </span>
+          </div>
+
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 sm:gap-8">
-            {/* Prominent Author Photo */}
-            <div className="relative shrink-0 group">
-              <div className="w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-3xl overflow-hidden border-2 border-emerald-500/30 dark:border-emerald-500/40 shadow-md ring-4 ring-emerald-500/10 dark:ring-emerald-500/20 bg-zinc-100 dark:bg-zinc-800">
+            {/* Author Photo with Retro Bevel */}
+            <div className="relative shrink-0">
+              <div className="w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-xl overflow-hidden border-2 border-zinc-900 shadow-[4px_4px_0px_0px_#18181b] dark:shadow-[4px_4px_0px_0px_#3f3f46] bg-zinc-100 dark:bg-zinc-800">
                 <Image
                   src="/abhishek-rai.jpg"
                   alt="Abhishek Rai speaking at India Eng Fest"
                   width={350}
                   height={350}
                   priority
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover object-center"
                 />
               </div>
-              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-zinc-900/90 dark:bg-zinc-950/90 text-white text-[10px] font-semibold px-3 py-0.5 rounded-full border border-zinc-700/60 shadow-xs flex items-center space-x-1.5 backdrop-blur-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>That&apos;s me!</span>
+              <div className="mt-2 text-center">
+                <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-amber-300 text-zinc-950 border border-zinc-900 inline-block shadow-[2px_2px_0px_0px_#18181b]">
+                  Abhishek Rai
+                </span>
               </div>
             </div>
 
             {/* Author Details & Actions */}
-            <div className="flex-1 space-y-3.5 text-center md:text-left">
+            <div className="flex-1 space-y-4 text-center md:text-left">
               <div className="space-y-2">
                 <div className="flex items-center justify-center md:justify-start space-x-2">
-                  <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800/50">
-                    Creator & Mentor
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-300 border border-zinc-900">
+                    [CREATOR & MENTOR]
                   </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-                    Scale with Rai
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono font-bold">
+                    @scale_with_rai
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
                   Abhishek Rai
                 </h1>
-                <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-lg">
+                <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-lg font-mono">
                   Software Engineer @ Handshake AI | ex-Atlassian • Distributed Systems & DSA Mentor • Creator of Wapas Padhle
                 </p>
               </div>
 
-              {/* Quick Link Buttons */}
-              <div className="flex flex-wrap justify-center md:justify-start gap-2.5 pt-1">
+              {/* Quick Link Buttons with Retro Tactile Styling */}
+              <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-1">
                 <a
                   href="https://topmate.io/arai_19999"
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => playClickSound()}
-                  className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all shadow-sm"
+                  className="retro-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
                 >
-                  <Calendar className="w-3.5 h-3.5" />
+                  <Calendar className="w-4 h-4" />
                   <span>Topmate Profile</span>
-                  <ExternalLink className="w-3 h-3 opacity-70" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
 
                 <a
@@ -249,17 +268,17 @@ export default function AuthorPage() {
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => playClickSound()}
-                  className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all"
+                  className="retro-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 cursor-pointer"
                 >
-                  <LinkedInIcon className="w-3.5 h-3.5 text-[#0077b5]" />
+                  <LinkedInIcon className="w-4 h-4 text-[#0077b5]" />
                   <span>LinkedIn Profile</span>
-                  <ExternalLink className="w-3 h-3 opacity-70" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed space-y-3">
+          <div className="pt-4 border-t-2 border-zinc-900 dark:border-zinc-700 text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed space-y-3 font-mono">
             <p>
               Hi! I&apos;m Abhishek. I built <strong>Wapas Padhle</strong> to solve one of the most common
               frustrations engineers encounter during technical interview prep: <em>comprehension without retention</em>.
@@ -274,13 +293,13 @@ export default function AuthorPage() {
 
         {/* 1:1 Offerings Grid */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-emerald-500" />
+          <div className="flex items-center justify-between border-b-2 border-zinc-900 dark:border-zinc-700 pb-2">
+            <h2 className="text-base font-black text-zinc-900 dark:text-white flex items-center space-x-2 font-mono uppercase">
+              <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Mentorship & Topmate Offerings</span>
             </h2>
-            <span className="text-xs text-zinc-400 font-mono">
-              Use code WAPASPADHLE20
+            <span className="text-xs text-zinc-600 dark:text-zinc-400 font-mono font-bold bg-amber-200 dark:bg-amber-900 px-2 py-0.5 rounded border border-zinc-900">
+              USE: WAPASPADHLE20
             </span>
           </div>
 
@@ -290,23 +309,23 @@ export default function AuthorPage() {
               return (
                 <div
                   key={offering.title}
-                  className="group relative p-5 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800/90 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-sm hover:border-emerald-300 dark:hover:border-zinc-700 hover:shadow-md transition-all duration-150 flex flex-col justify-between gap-4"
+                  className="retro-box rounded-xl p-5 sm:p-6 bg-white dark:bg-zinc-900 flex flex-col justify-between gap-4 text-left"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${offering.tagColor}`}>
+                      <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${offering.tagColor}`}>
                         {offering.tag}
                       </span>
-                      <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
-                        <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
+                        <Icon className="w-4 h-4" />
                       </div>
                     </div>
 
-                    <h3 className="text-base font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-base sm:text-lg font-black text-zinc-900 dark:text-white">
                       {offering.title}
                     </h3>
 
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed font-mono">
                       {offering.description}
                     </p>
                   </div>
@@ -316,10 +335,10 @@ export default function AuthorPage() {
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => playClickSound()}
-                    className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-xs font-semibold bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 active:scale-[0.98] transition-all shadow-2xs group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 dark:group-hover:text-white"
+                    className="retro-btn flex items-center justify-between w-full px-4 py-2.5 rounded-lg text-xs sm:text-sm font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
                   >
                     <span>{offering.cta}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
               );
@@ -328,23 +347,23 @@ export default function AuthorPage() {
         </section>
 
         {/* Philosophy of Scale with Rai */}
-        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/30 p-6 sm:p-7 space-y-3">
-          <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 dark:text-white">
-            <Brain className="w-4 h-4 text-emerald-500" />
+        <section className="retro-box rounded-xl bg-[#fffefb] dark:bg-zinc-950 p-6 sm:p-7 space-y-3">
+          <div className="flex items-center space-x-2 text-sm font-black text-zinc-900 dark:text-white font-mono uppercase">
+            <Brain className="w-4 h-4 text-amber-500" />
             <span>The &quot;Scale with Rai&quot; Philosophy</span>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+          <p className="text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed font-mono">
             Engineering mastery comes from deliberate practice, rigorous invariant checking, and
             structured active recall. We discard superficial cramming and trendy hype, focusing exclusively on
             the mental models and engineering systems fundamentals that make engineers truly thrive.
           </p>
-          <div className="pt-2 flex flex-wrap gap-4 text-xs font-medium">
+          <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono font-bold">
             <a
               href="https://www.linkedin.com/in/abhishek-rai-atlassian/"
               target="_blank"
               rel="noreferrer"
               onClick={() => playClickSound()}
-              className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1"
+              className="retro-link flex items-center space-x-1"
             >
               <LinkedInIcon className="w-3.5 h-3.5" />
               <span>LinkedIn Profile</span>
@@ -354,7 +373,7 @@ export default function AuthorPage() {
               target="_blank"
               rel="noreferrer"
               onClick={() => playClickSound()}
-              className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1"
+              className="retro-link flex items-center space-x-1"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>TopMate (arai_19999)</span>
@@ -364,7 +383,7 @@ export default function AuthorPage() {
               target="_blank"
               rel="noreferrer"
               onClick={() => playClickSound()}
-              className="text-emerald-600 dark:text-emerald-400 hover:underline flex items-center space-x-1"
+              className="retro-link flex items-center space-x-1"
             >
               <span>Twitter / X (@scale_with_rai)</span>
             </a>
@@ -373,15 +392,15 @@ export default function AuthorPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 mt-auto py-6 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 gap-3">
+      <footer className="border-t-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] mt-auto py-6 relative z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 gap-3">
           <p>Built with ❤️ by Abhishek Rai • Scale with Rai.</p>
           <Link
             href="/"
             onClick={() => playClickSound()}
-            className="hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="retro-link font-bold"
           >
-            Return to Wapas Padhle →
+            &lt; Return to Wapas Padhle
           </Link>
         </div>
       </footer>

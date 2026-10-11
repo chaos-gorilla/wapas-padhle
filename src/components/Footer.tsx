@@ -3,30 +3,30 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 mt-auto py-8 transition-colors">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 gap-3">
+    <footer className="border-t-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] mt-auto py-8 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 gap-4">
         <p>
-          A free developer utility built by{' '}
+          Built with HTML nostalgia by{' '}
           <Link
             href="/author"
-            className="font-medium text-zinc-700 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400 underline underline-offset-2 transition-colors"
+            className="retro-link font-bold text-zinc-900 dark:text-white"
           >
             Abhishek Rai • Scale with Rai
           </Link>
           .
         </p>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-bold">
           <Link
             href="/author"
-            className="hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
           >
-            Author & Mentorship
+            Author Profile
           </Link>
           <a
             href="https://topmate.io/arai_19999"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
           >
             TopMate (1:1)
           </a>
@@ -34,7 +34,7 @@ export function Footer() {
             href="https://www.linkedin.com/in/abhishek-rai-atlassian/"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
           >
             LinkedIn
           </a>
@@ -42,7 +42,7 @@ export function Footer() {
             href="https://t.me/WapasPadhleBot"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-zinc-900 dark:hover:text-white transition-colors"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
           >
             @WapasPadhleBot
           </a>

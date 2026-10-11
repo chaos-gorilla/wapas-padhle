@@ -3,19 +3,19 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fbfbfd;
+  --background: #f8f6f0;
   --foreground: #18181b;
   --card-bg: #ffffff;
-  --border: #e4e4e7;
-  --muted: #71717a;
+  --border: #18181b;
+  --muted: #52525b;
   --accent: #059669;
 }
 
 .dark {
-  --background: #09090b;
+  --background: #111113;
   --foreground: #f4f4f5;
-  --card-bg: #121215;
-  --border: #27272a;
+  --card-bg: #18181b;
+  --border: #3f3f46;
   --muted: #a1a1aa;
   --accent: #10b981;
 }
@@ -27,10 +27,84 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+/* Retro HTML Nostalgia Utilities */
+.retro-box {
+  border: 2px solid #18181b;
+  box-shadow: 3px 3px 0px 0px #18181b;
+  transition: all 0.15s ease;
+}
+
+.dark .retro-box {
+  border: 2px solid #3f3f46;
+  box-shadow: 3px 3px 0px 0px #27272a;
+}
+
+.retro-box-sm {
+  border: 1.5px solid #18181b;
+  box-shadow: 2px 2px 0px 0px #18181b;
+}
+
+.dark .retro-box-sm {
+  border: 1.5px solid #3f3f46;
+  box-shadow: 2px 2px 0px 0px #27272a;
+}
+
+.retro-btn {
+  border: 2px solid #18181b;
+  box-shadow: 2.5px 2.5px 0px 0px #18181b;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  user-select: none;
+}
+
+.retro-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3.5px 3.5px 0px 0px #18181b;
+}
+
+.retro-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #18181b;
+}
+
+.dark .retro-btn {
+  border: 2px solid #52525b;
+  box-shadow: 2.5px 2.5px 0px 0px #27272a;
+}
+
+.dark .retro-btn:hover {
+  border-color: #71717a;
+  box-shadow: 3.5px 3.5px 0px 0px #3f3f46;
+}
+
+.dark .retro-btn:active {
+  box-shadow: 0px 0px 0px 0px #27272a;
+}
+
+.retro-link {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+}
+
+.dark .retro-link {
+  color: #60a5fa;
+}
+
+.retro-link:hover {
+  background-color: #fef08a;
+  color: #000000;
+}
+
+.dark .retro-link:hover {
+  background-color: #854d0e;
+  color: #ffffff;
+}
+
 /* Subtle scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -38,66 +112,72 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 128, 0.25);
-  border-radius: 9999px;
+  background: rgba(120, 120, 128, 0.35);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 120, 128, 0.45);
+  background: rgba(120, 120, 128, 0.6);
 }
 
-/* Calm productivity animations & micro-interactions */
-@keyframes cardEnter {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(0.985);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-@keyframes calmPulse {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.75;
-    transform: scale(1.03);
-  }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #18181b;
+  border-radius: 0px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #52525b;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #059669;
 }
 
-@keyframes softShimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+/* 1980s Era Retro Animations & Micro-Interactions */
+@keyframes retroBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
-.animate-card-enter {
-  animation: cardEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes retroPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97) translate(1px, 1px); }
+  100% { transform: scale(1); }
 }
 
-.animate-calm-pulse {
-  animation: calmPulse 7s ease-in-out infinite;
+@keyframes scanlineFlicker {
+  0% { opacity: 0.98; }
+  50% { opacity: 1; }
+  100% { opacity: 0.98; }
 }
 
-.animate-soft-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
-  background-size: 200% 100%;
-  animation: softShimmer 4s infinite linear;
+.animate-retro-blink {
+  animation: retroBlink 1s infinite;
 }
 
-/* Tactile click micro-interaction utility */
-.btn-clicky {
-  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  user-select: none;
+.animate-scanline {
+  animation: scanlineFlicker 0.15s infinite;
 }
-.btn-clicky:active {
-  transform: scale(0.97);
+
+/* 1980s CRT scanlines background texture overlay */
+.crt-grid-bg {
+  background-size: 100% 3px;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 50%, rgba(0, 0, 0, 0) 51%);
+}
+.dark .crt-grid-bg {
+  background-size: 100% 3px;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 50%, rgba(0, 0, 0, 0) 51%);
 }
 

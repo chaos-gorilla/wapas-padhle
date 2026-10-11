@@ -36,7 +36,7 @@ export function setSoundEnabled(enabled: boolean): void {
 }
 
 /**
- * Subtle tactile switch click sound (18ms soft sine pop)
+ * Crisp 1980s mechanical switch click sound (tactile pop with secondary dampening snap)
  */
 export function playClickSound(): void {
   if (!isSoundEnabled()) return;
@@ -44,23 +44,33 @@ export function playClickSound(): void {
   if (!ctx) return;
 
   try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
     const now = ctx.currentTime;
 
-    osc.frequency.setValueAtTime(620, now);
-    osc.frequency.exponentialRampToValueAtTime(320, now + 0.025);
+    // Primary mechanical contact click
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(1200, now);
+    osc1.frequency.exponentialRampToValueAtTime(420, now + 0.018);
+    gain1.gain.setValueAtTime(0.06, now);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.018);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.018);
 
-    gain.gain.setValueAtTime(0.045, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.025);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.025);
+    // Secondary body resonance snap
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(320, now + 0.005);
+    osc2.frequency.exponentialRampToValueAtTime(140, now + 0.035);
+    gain2.gain.setValueAtTime(0.05, now + 0.005);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.005);
+    osc2.stop(now + 0.035);
   } catch {
     // Ignore audio autoplay restrictions
   }

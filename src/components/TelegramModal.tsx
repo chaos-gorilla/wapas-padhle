@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Send, ArrowRight, ShieldCheck } from 'lucide-react';
 import { TelegramSettings } from '@/types';
+import { X, Send, ShieldCheck, ArrowRight, ExternalLink } from 'lucide-react';
 
 interface TelegramModalProps {
   settings: TelegramSettings;
@@ -21,8 +21,8 @@ export function TelegramModal({
   const [dailyReminderEnabled, setDailyReminderEnabled] = useState(
     settings.dailyReminderEnabled ?? true
   );
-  const [testStatus, setTestStatus] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
+  const [testStatus, setTestStatus] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -66,101 +66,91 @@ export function TelegramModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 shadow-xl text-left">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 dark:hover:text-white p-1 rounded-md"
-        >
-          <X className="w-4 h-4" />
-        </button>
+      <div className="retro-box relative w-full max-w-lg rounded-xl bg-[#fffefc] dark:bg-zinc-950 p-6 sm:p-7 text-left">
+        {/* Retro Window Title Bar */}
+        <div className="flex items-center justify-between border-b-2 border-zinc-900 dark:border-zinc-700 pb-3 mb-4">
+          <div className="flex items-center space-x-2">
+            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block border border-zinc-900" />
+            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block border border-zinc-900" />
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block border border-zinc-900" />
+            <span className="ml-2 font-mono font-bold text-xs uppercase text-zinc-900 dark:text-zinc-200">
+              TELEGRAM_SYNC.HTM
+            </span>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="retro-btn p-1 rounded bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Header */}
         <div className="space-y-1 mb-4">
-          <div className="flex items-center space-x-2">
-            <span className="p-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Send className="w-3.5 h-3.5" />
-            </span>
-            <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-              Telegram Reminders
-            </span>
-          </div>
-          <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+          <h3 className="text-xl font-black text-zinc-900 dark:text-white">
             Connect @WapasPadhleBot
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Get pinged daily at 8:00 AM with the patterns you need to revisit today.
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+            Receive morning digests with the concept cards due for revision today.
           </p>
         </div>
 
-        {/* What happens guidance */}
-        <div className="rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 p-3 space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
-          <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center space-x-1.5 text-[11px]">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>What happens when you connect?</span>
+        {/* How to Connect Box */}
+        <div className="rounded-lg bg-sky-50 dark:bg-sky-950/40 border-2 border-zinc-900 dark:border-zinc-700 p-3.5 space-y-2 text-xs sm:text-sm text-zinc-800 dark:text-zinc-200 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#27272a]">
+          <p className="font-bold text-sky-900 dark:text-sky-300 flex items-center space-x-1.5 font-mono">
+            <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            <span>HOW TO CONNECT (2 STEPS):</span>
           </p>
-          <ul className="space-y-1 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300 pl-1">
-            <li>• <strong>Daily 8:00 AM Digest:</strong> Receive a morning summary of concepts and systems due today.</li>
-            <li>• <strong>Instant Active Recall:</strong> Review invariants and mark your recall straight from Telegram.</li>
-            <li>• <strong>No Spam Guarantee:</strong> Only your personal spaced repetition prompts — nothing else.</li>
-          </ul>
-        </div>
-
-        {/* Steps */}
-        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
-          <p className="font-semibold text-zinc-900 dark:text-white flex items-center space-x-1.5">
-            <span>Connect in 2 Easy Steps:</span>
-          </p>
-          <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed text-[11px]">
+          <ol className="list-decimal pl-4 space-y-1.5 font-mono text-xs leading-relaxed">
             <li>
               Open{' '}
               <a
                 href="https://t.me/WapasPadhleBot"
                 target="_blank"
                 rel="noreferrer"
-                className="text-emerald-600 dark:text-emerald-400 font-semibold underline"
+                className="retro-link"
               >
                 @WapasPadhleBot
               </a>{' '}
-              on Telegram and tap <code className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-zinc-900 dark:text-white">/start</code>.
+              in Telegram and tap <strong>/start</strong>.
             </li>
             <li>
-              Paste your numeric Telegram Chat ID below:
+              The bot replies with your numeric <strong>Chat ID</strong>. Paste it below:
             </li>
           </ol>
         </div>
 
-        {/* Input */}
-        <div className="mt-4 space-y-3.5">
+        <div className="space-y-4 mt-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Your Telegram Chat ID
+            <label className="block text-xs sm:text-sm font-mono font-bold text-zinc-800 dark:text-zinc-200 mb-1">
+              TELEGRAM CHAT ID:
             </label>
-            <div className="flex items-center space-x-2">
+            <div className="flex space-x-2">
               <input
                 type="text"
                 value={chatId}
                 onChange={(e) => setChatId(e.target.value)}
                 placeholder="e.g. 123456789"
-                className="flex-1 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:border-emerald-500 font-mono"
+                className="flex-1 px-3.5 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:bg-yellow-50/50"
               />
               <button
                 type="button"
                 onClick={handleTestPing}
                 disabled={testing || !chatId.trim()}
-                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors shrink-0 ${
+                className={`retro-btn px-3.5 py-2 rounded-lg text-xs font-mono font-bold shrink-0 cursor-pointer ${
                   chatId.trim()
-                    ? 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                    : 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-400 cursor-not-allowed'
+                    ? 'bg-amber-300 text-zinc-950 border-2 border-zinc-900'
+                    : 'bg-zinc-200 text-zinc-500 cursor-not-allowed opacity-60'
                 }`}
               >
-                {testing ? 'Testing...' : 'Test Ping'}
+                {testing ? 'Pinging...' : 'Test Ping'}
               </button>
             </div>
             {testStatus && (
               <p
-                className={`text-[11px] mt-1 ${
-                  testStatus.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                className={`text-xs font-mono font-bold mt-1.5 ${
+                  testStatus.startsWith('✓') ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'
                 }`}
               >
                 {testStatus}
@@ -169,36 +159,36 @@ export function TelegramModal({
           </div>
 
           {/* Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700">
             <div>
-              <p className="text-xs font-medium text-zinc-900 dark:text-white">Daily 8:00 AM Digest</p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                End every reminder with - Scale with Rai
+              <p className="text-xs sm:text-sm font-mono font-bold text-zinc-900 dark:text-white">Daily 8:00 AM Digest</p>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 font-mono">
+                Morning notifications signed with - Scale with Rai
               </p>
             </div>
             <input
               type="checkbox"
               checked={dailyReminderEnabled}
               onChange={(e) => setDailyReminderEnabled(e.target.checked)}
-              className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700"
+              className="w-5 h-5 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-5 pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-end space-x-2">
+        <div className="mt-5 pt-3.5 border-t-2 border-zinc-900 dark:border-zinc-700 flex items-center justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+            className="retro-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="flex items-center space-x-1 px-4 py-2 rounded-lg text-xs font-semibold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity"
+            className="retro-btn flex items-center space-x-1.5 px-5 py-2 rounded-lg text-xs sm:text-sm font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
           >
             <span>Save Settings</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

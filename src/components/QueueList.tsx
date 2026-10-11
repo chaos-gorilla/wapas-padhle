@@ -14,9 +14,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  LayoutGrid,
-  List,
-  Check,
+  Hash,
+  Eye,
 } from 'lucide-react';
 import { playClickSound, playMasteredChime } from '@/lib/sound';
 
@@ -32,7 +31,6 @@ interface QueueListProps {
 
 type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
 type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
-type ViewMode = 'cards' | 'list';
 
 export function QueueList({
   items,
@@ -44,21 +42,8 @@ export function QueueList({
   onRescheduleBacklog,
 }: QueueListProps) {
   const [activeTab, setActiveTab] = useState<TabType>('due');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortType>('due_asc');
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
-
-  // Extract unique categories
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    items.forEach((item) => {
-      if (item.category && item.category.trim()) {
-        set.add(item.category.trim());
-      }
-    });
-    return Array.from(set);
-  }, [items]);
 
   const dueItems = useMemo(
     () => items.filter((item) => getItemStatus(reviews[item.id]) === 'DUE_TODAY'),
@@ -87,17 +72,14 @@ export function QueueList({
       list = items;
     }
 
-    if (selectedCategory !== 'all') {
-      list = list.filter((item) => item.category === selectedCategory);
-    }
-
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
         (item) =>
           item.title.toLowerCase().includes(q) ||
           item.category?.toLowerCase().includes(q) ||
-          item.notes?.toLowerCase().includes(q)
+          item.notes?.toLowerCase().includes(q) ||
+          item.tags?.some((t) => t.toLowerCase().includes(q))
       );
     }
 
@@ -120,7 +102,11 @@ export function QueueList({
       const dateB = revB?.nextReviewDate || '9999-99-99';
       return dateA.localeCompare(dateB);
     });
-  }, [items, reviews, activeTab, selectedCategory, search, sortBy, dueItems, backlogItems, upcomingItems]);
+  }, [items, reviews, activeTab, search, sortBy, dueItems, backlogItems, upcomingItems]);
+
+  function targetQ(q: string) {
+    return q;
+  }
 
   const handleCardClick = (item: ConceptItem) => {
     playClickSound();
@@ -145,200 +131,65 @@ export function QueueList({
 
   return (
     <div className="space-y-4">
-      {/* Top Filter Bar */}
-      <div className="space-y-3 bg-white/70 dark:bg-zinc-900/60 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 backdrop-blur-sm shadow-xs">
-        {/* Status Tabs and View Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 sm:pb-0">
-            <button
-              onClick={() => {
-                playClickSound();
-                setActiveTab('due');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap active:scale-95 ${
-                activeTab === 'due'
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Due Today</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'due' ? 'bg-zinc-700 text-zinc-100 dark:bg-zinc-200 dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                {dueItems.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                playClickSound();
-                setActiveTab('backlog');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap active:scale-95 ${
-                activeTab === 'backlog'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30'
-              }`}
-            >
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span>Backlog</span>
-              {backlogItems.length > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'backlog' ? 'bg-rose-700 text-white' : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'}`}>
-                  {backlogItems.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => {
-                playClickSound();
-                setActiveTab('upcoming');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap active:scale-95 ${
-                activeTab === 'upcoming'
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>Upcoming</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'upcoming' ? 'bg-zinc-700 text-zinc-100 dark:bg-zinc-200 dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                {upcomingItems.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => {
-                playClickSound();
-                setActiveTab('all');
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap active:scale-95 ${
-                activeTab === 'all'
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <span>All Cards</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'all' ? 'bg-zinc-700 text-zinc-100 dark:bg-zinc-200 dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}>
-                {items.length}
-              </span>
-            </button>
-          </div>
-
-          {/* View mode toggle */}
-          <div className="flex items-center space-x-1 border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5 self-end sm:self-auto bg-zinc-50 dark:bg-zinc-900">
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setViewMode('cards');
-              }}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                viewMode === 'cards'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-2xs'
-                  : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-              title="Cards format"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setViewMode('list');
-              }}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-2xs'
-                  : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-              title="List format"
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-          </div>
+      {/* Top Filter and Controls Bar with Retro HTML Box Styling */}
+      <div className="retro-box bg-white dark:bg-zinc-900 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+        {/* Full-width Search Box */}
+        <div className="relative w-full">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search concepts, tags, invariant notes..."
+            className="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs sm:text-sm text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:bg-yellow-50/50 dark:focus:bg-zinc-900 transition-colors"
+          />
         </div>
 
-        {/* Search, Sort, and Category Filtering */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by invariant, system name, notes..."
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-            />
+        {/* Dropdowns Row: Status Filter + Sorting (Fits in one box, zero overflow!) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Status Dropdown */}
+          <div className="relative">
+            <select
+              value={activeTab}
+              onChange={(e) => {
+                playClickSound();
+                setActiveTab(e.target.value as TabType);
+              }}
+              className="retro-btn w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs sm:text-sm font-bold text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
+            >
+              <option value="due">⏰ Due Today ({dueItems.length})</option>
+              <option value="backlog">🚨 Backlog ({backlogItems.length})</option>
+              <option value="upcoming">✓ Upcoming ({upcomingItems.length})</option>
+              <option value="all">📚 All Cards ({items.length})</option>
+            </select>
           </div>
 
-          {/* Sort Selector */}
-          <div className="flex items-center space-x-1.5 shrink-0">
-            <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400" />
+          {/* Sort Dropdown */}
+          <div className="relative">
             <select
               value={sortBy}
               onChange={(e) => {
                 playClickSound();
                 setSortBy(e.target.value as SortType);
               }}
-              className="px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+              className="retro-btn w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs sm:text-sm font-bold text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
             >
               <option value="due_asc">Sort: Due Date (Earliest)</option>
-              <option value="interval_desc">Sort: Spacing Interval (High to Low)</option>
+              <option value="interval_desc">Sort: Spacing (High to Low)</option>
               <option value="title_asc">Sort: Title (A-Z)</option>
               <option value="created_desc">Sort: Recently Added</option>
             </select>
           </div>
         </div>
-
-        {/* Category Pills */}
-        {categories.length > 0 && (
-          <div className="flex items-center space-x-1.5 overflow-x-auto pt-1 pb-1">
-            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 flex items-center space-x-1 mr-1">
-              <Filter className="w-3 h-3" />
-              <span>Tag:</span>
-            </span>
-            <button
-              onClick={() => {
-                playClickSound();
-                setSelectedCategory('all');
-              }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
-                selectedCategory === 'all'
-                  ? 'bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900'
-                  : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              All Topics
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  playClickSound();
-                  setSelectedCategory(cat);
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Backlog recovery action if viewing backlog */}
+      {/* Backlog recovery alert */}
       {activeTab === 'backlog' && backlogItems.length > 0 && (
-        <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="retro-box p-4 rounded-xl bg-rose-100 dark:bg-rose-950/40 border-2 border-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm w-full">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-            <span className="text-rose-900 dark:text-rose-200 font-medium">
-              You have {backlogItems.length} overdue card{backlogItems.length > 1 ? 's' : ''}. Spread them across 3 days to avoid cognitive overload.
+            <AlertCircle className="w-5 h-5 text-rose-700 shrink-0" />
+            <span className="text-rose-950 dark:text-rose-200 font-bold">
+              {backlogItems.length} overdue cards detected. Avoid cognitive overload by spreading them across 3 days.
             </span>
           </div>
           <button
@@ -346,25 +197,36 @@ export function QueueList({
               playClickSound();
               onRescheduleBacklog();
             }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-zinc-900 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100/50 dark:hover:bg-rose-950/60 shadow-2xs cursor-pointer active:scale-95 transition-all"
+            className="retro-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-rose-900 border-2 border-rose-900 cursor-pointer shrink-0"
           >
-            <CalendarRange className="w-3.5 h-3.5 text-rose-500" />
+            <CalendarRange className="w-3.5 h-3.5 text-rose-700" />
             <span>Redistribute Over 3 Days</span>
           </button>
         </div>
       )}
 
-      {/* Cards List / Grid */}
+      {/* Stacked Scrollable List Container (Only this section scrolls!) */}
       {filteredList.length === 0 ? (
-        <div className="py-14 text-center rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/20 p-8">
-          <Layers className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-2" />
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-            No cards matched your active filters.
+        <div className="retro-box py-16 px-6 text-center rounded-xl bg-white dark:bg-zinc-900 w-full space-y-3">
+          <Layers className="w-10 h-10 text-zinc-400 mx-auto" />
+          <p className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">
+            [No cards matched your current filter]
           </p>
+          <div className="pt-1">
+            <button
+              onClick={() => {
+                playClickSound();
+                setActiveTab('all');
+                setSearch('');
+              }}
+              className="retro-btn px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
+            >
+              View All Cards ({items.length}) ➔
+            </button>
+          </div>
         </div>
-      ) : viewMode === 'cards' ? (
-        /* Rich Clickable Cards Grid Format */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[720px] overflow-y-auto pr-1">
+      ) : (
+        <div className="space-y-3.5 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[460px] pr-2 custom-scrollbar w-full">
           {filteredList.map((item) => {
             const rev = reviews[item.id];
             const status = getItemStatus(rev);
@@ -374,44 +236,61 @@ export function QueueList({
               <div
                 key={item.id}
                 onClick={() => handleCardClick(item)}
-                className={`group relative p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between gap-3 text-left active:scale-[0.98] ${
+                className={`retro-box rounded-xl p-5 text-left cursor-pointer transition-all ${
                   isSelected
-                    ? 'border-emerald-500 ring-2 ring-emerald-500/80 bg-emerald-50/40 dark:bg-emerald-950/25 shadow-md'
-                    : 'border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/60 hover:border-emerald-300 dark:hover:border-zinc-700 hover:shadow-sm'
+                    ? 'border-2 border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-[4px_4px_0px_0px_#059669]'
+                    : 'bg-white dark:bg-zinc-900 hover:bg-yellow-50/30 dark:hover:bg-zinc-800/60'
                 }`}
               >
-                {/* Header with Title & Status */}
+                {/* Header with Category, Tags & Status Badges */}
                 <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1.5 flex-1">
+                      {/* Tags & Badges Row */}
                       <div className="flex flex-wrap items-center gap-1.5">
                         {item.category && (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-900 dark:border-zinc-700">
                             {item.category}
                           </span>
                         )}
 
+                        {item.tags?.map((tag) => (
+                          <span
+                            key={tag}
+                            className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 border border-zinc-900 dark:border-zinc-700 flex items-center space-x-0.5"
+                          >
+                            <Hash className="w-2.5 h-2.5 text-zinc-700 dark:text-amber-400" />
+                            <span>{tag}</span>
+                          </span>
+                        ))}
+
                         {status === 'OVERDUE' && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/80 text-rose-600 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/50 font-mono">
-                            Overdue
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900">
+                            [OVERDUE]
                           </span>
                         )}
 
                         {status === 'DUE_TODAY' && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-900/50 font-mono">
-                            Due Today
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900">
+                            [DUE TODAY]
                           </span>
                         )}
 
-                        {isSelected && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 text-white flex items-center space-x-1 shadow-2xs">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            <span>Active in Reviser</span>
+                        {isSelected ? (
+                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-500 text-white border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] flex items-center space-x-1.5">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            <span>★ IN FOCUS REVISER</span>
+                          </span>
+                        ) : (
+                          <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center space-x-1">
+                            <Eye className="w-3 h-3" />
+                            <span>Click to review</span>
                           </span>
                         )}
                       </div>
 
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2 pt-0.5">
+                      {/* Card Title */}
+                      <h4 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white line-clamp-2 pt-1 hover:text-blue-700 dark:hover:text-blue-400">
                         {item.title}
                       </h4>
                     </div>
@@ -423,159 +302,69 @@ export function QueueList({
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white transition-colors shrink-0"
-                        title="Open external resource"
+                        className="retro-btn p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0"
+                        title="Open external documentation"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4" />
                       </a>
                     )}
                   </div>
 
                   {/* Notes snippet */}
                   {item.notes && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-relaxed pt-0.5 font-normal">
                       {item.notes}
                     </p>
                   )}
                 </div>
 
                 {/* Footer metadata & quick actions */}
-                <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                <div className="pt-3 border-t-2 border-zinc-900 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
                   <div className="flex items-center space-x-2">
-                    <span title="Spaced interval">
+                    <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700">
                       {rev?.interval ? `${rev.interval}d interval` : 'New card'}
                     </span>
                     {rev?.nextReviewDate && (
-                      <span>• Next: {rev.nextReviewDate}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700">
+                        Next: {rev.nextReviewDate}
+                      </span>
                     )}
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="flex items-center space-x-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  {/* Quick Action buttons with Retro Tactile Styling */}
+                  <div
+                    className="flex items-center space-x-1.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={(e) => handleRate(e, item.id, 'struggled')}
-                      className="px-2 py-1 rounded-md text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                      title="Mark struggled (revisit tomorrow)"
+                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer"
+                      title="Mark struggled (review tomorrow)"
                     >
-                      Struggled
+                      ❌ Hard
                     </button>
                     <button
                       onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                      className="px-2 py-1 rounded-md text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer"
                       title="Mark comfortable"
                     >
-                      Good
+                      ✓ Good
                     </button>
                     <button
                       onClick={(e) => handleRate(e, item.id, 'mastered')}
-                      className="px-2 py-1 rounded-md text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
-                      title="Mark mastered (longer interval)"
+                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer"
+                      title="Mark mastered (longer spacing)"
                     >
-                      Mastered
+                      ⭐ Easy
                     </button>
                     <button
                       onClick={(e) => handleDelete(e, item.id)}
-                      className="p-1 text-zinc-300 hover:text-rose-500 dark:text-zinc-600 dark:hover:text-rose-400 transition-colors cursor-pointer ml-1"
+                      className="retro-btn p-1 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 cursor-pointer ml-1"
                       title="Delete card"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Compact List View */
-        <div className="space-y-2 max-h-[720px] overflow-y-auto pr-1">
-          {filteredList.map((item) => {
-            const rev = reviews[item.id];
-            const status = getItemStatus(rev);
-            const isSelected = selectedItemId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleCardClick(item)}
-                className={`group p-3 sm:p-3.5 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 active:scale-[0.99] ${
-                  isSelected
-                    ? 'border-emerald-500 ring-2 ring-emerald-500/80 bg-emerald-50/40 dark:bg-emerald-950/25 shadow-xs'
-                    : 'border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:border-zinc-300 dark:hover:border-zinc-700'
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                      {item.title}
-                    </h4>
-                    {item.category && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                        {item.category}
-                      </span>
-                    )}
-                    {status === 'OVERDUE' && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-300 font-mono">
-                        Overdue ({rev?.nextReviewDate})
-                      </span>
-                    )}
-                    {isSelected && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-600 text-white font-mono flex items-center space-x-1">
-                        <Check className="w-2.5 h-2.5" />
-                        <span>Active</span>
-                      </span>
-                    )}
-                  </div>
-
-                  {item.notes && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1 max-w-xl">
-                      {item.notes}
-                    </p>
-                  )}
-                </div>
-
-                {/* Right Actions */}
-                <div className="flex items-center space-x-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-white"
-                      title="Open Resource"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-
-                  <div className="flex items-center space-x-1 border-l border-zinc-200 dark:border-zinc-800 pl-2">
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'struggled')}
-                      className="px-2 py-1 rounded text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                    >
-                      Struggled
-                    </button>
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                      className="px-2 py-1 rounded text-[11px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                    >
-                      Good
-                    </button>
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'mastered')}
-                      className="px-2 py-1 rounded text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer"
-                    >
-                      Mastered
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={(e) => handleDelete(e, item.id)}
-                    className="p-1.5 text-zinc-300 hover:text-rose-500 dark:text-zinc-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                    title="Delete card"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
               </div>
             );
