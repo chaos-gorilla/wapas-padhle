@@ -93,11 +93,23 @@ export function TelegramModal({
           </p>
         </div>
 
+        {/* What happens guidance */}
+        <div className="rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 p-3 space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+          <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center space-x-1.5 text-[11px]">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>What happens when you connect?</span>
+          </p>
+          <ul className="space-y-1 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300 pl-1">
+            <li>• <strong>Daily 8:00 AM Digest:</strong> Receive a morning summary of concepts and systems due today.</li>
+            <li>• <strong>Instant Active Recall:</strong> Review invariants and mark your recall straight from Telegram.</li>
+            <li>• <strong>No Spam Guarantee:</strong> Only your personal spaced repetition prompts — nothing else.</li>
+          </ul>
+        </div>
+
         {/* Steps */}
         <div className="rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
           <p className="font-semibold text-zinc-900 dark:text-white flex items-center space-x-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Connect in 2 Steps:</span>
+            <span>Connect in 2 Easy Steps:</span>
           </p>
           <ol className="list-decimal list-inside space-y-1.5 pl-1 leading-relaxed text-[11px]">
             <li>
@@ -110,10 +122,10 @@ export function TelegramModal({
               >
                 @WapasPadhleBot
               </a>{' '}
-              on Telegram and click <code className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-zinc-900 dark:text-white">/start</code>.
+              on Telegram and tap <code className="bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 rounded text-zinc-900 dark:text-white">/start</code>.
             </li>
             <li>
-              Paste your Telegram Chat ID below:
+              Paste your numeric Telegram Chat ID below:
             </li>
           </ol>
         </div>

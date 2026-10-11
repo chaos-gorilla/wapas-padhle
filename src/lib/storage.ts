@@ -82,7 +82,26 @@ export function loadReviews(): Record<string, ReviewRecord> {
       localStorage.setItem(REVIEWS_KEY, JSON.stringify(seeded));
       return seeded;
     }
-    return JSON.parse(raw);
+    const parsed: Record<string, ReviewRecord> = JSON.parse(raw);
+    let changed = false;
+    for (const id in parsed) {
+      const r = parsed[id];
+      if (
+        !r.nextReviewDate ||
+        r.nextReviewDate.includes('NaN') ||
+        typeof r.interval !== 'number' ||
+        isNaN(r.interval) ||
+        r.interval > 365
+      ) {
+        r.nextReviewDate = formatDate(new Date());
+        r.interval = Math.min(Math.max(1, r.interval || 1), 365);
+        changed = true;
+      }
+    }
+    if (changed) {
+      localStorage.setItem(REVIEWS_KEY, JSON.stringify(parsed));
+    }
+    return parsed;
   } catch {
     return {};
   }

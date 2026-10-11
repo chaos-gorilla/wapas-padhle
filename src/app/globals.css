@@ -45,3 +45,59 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(120, 120, 128, 0.45);
 }
+
+/* Calm productivity animations & micro-interactions */
+@keyframes cardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes calmPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes softShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-card-enter {
+  animation: cardEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-calm-pulse {
+  animation: calmPulse 7s ease-in-out infinite;
+}
+
+.animate-soft-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: softShimmer 4s infinite linear;
+}
+
+/* Tactile click micro-interaction utility */
+.btn-clicky {
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+.btn-clicky:active {
+  transform: scale(0.97);
+}
+
