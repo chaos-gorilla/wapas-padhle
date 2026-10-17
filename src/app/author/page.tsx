@@ -9,16 +9,26 @@ import {
   Sparkles,
   Brain,
   ExternalLink,
-  Sun,
-  Moon,
   Copy,
   Check,
   Compass,
   Video,
   Briefcase,
   MessageSquare,
-  Gift,
 } from 'lucide-react';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+import { AddConceptModal } from '@/components/AddConceptModal';
+import { TelegramModal } from '@/components/TelegramModal';
+import {
+  loadItems,
+  loadReviews,
+  loadTelegramSettings,
+  saveNewItem,
+  saveTelegramSettings,
+} from '@/lib/storage';
+import { getItemStatus } from '@/lib/sm2';
+import { ConceptItem, ReviewRecord, TelegramSettings } from '@/types';
 import { playClickSound, playMasteredChime } from '@/lib/sound';
 
 function LinkedInIcon({ className }: { className?: string }) {
@@ -44,9 +54,35 @@ const getThemeSnapshot = () =>
   typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 const getServerSnapshot = () => false;
 
+const emptySubscribe = () => () => {};
+
 export default function AuthorPage() {
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const isDark = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerSnapshot);
   const [copied, setCopied] = useState(false);
+
+  const [items, setItems] = useState<ConceptItem[]>(() => loadItems());
+  const [reviews] = useState<Record<string, ReviewRecord>>(() => loadReviews());
+  const [telegramSettings, setTelegramSettings] = useState<TelegramSettings>(() =>
+    loadTelegramSettings()
+  );
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
+
+  const dueCount = items.filter((i) => {
+    const status = getItemStatus(reviews[i.id]);
+    return status === 'DUE_TODAY' || status === 'OVERDUE';
+  }).length;
+
+  const handleAddItem = (data: Omit<ConceptItem, 'id' | 'createdAt'>) => {
+    const created = saveNewItem(data);
+    setItems((prev) => [created, ...prev]);
+  };
+
+  const handleSaveTelegram = (updated: TelegramSettings) => {
+    saveTelegramSettings(updated);
+    setTelegramSettings(updated);
+  };
 
   const toggleTheme = () => {
     playClickSound();
@@ -113,31 +149,32 @@ export default function AuthorPage() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-[#f8f6f0] dark:bg-[#111113] text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-yellow-200 relative overflow-x-hidden">
       {/* Top Retro Navbar */}
-      <header className="w-full border-b-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] sticky top-0 z-30">
-        <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+      <Header
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
+        onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        telegramSettings={telegramSettings}
+        dueCount={isMounted ? dueCount : undefined}
+      />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8 relative z-10">
+        {/* Navigation Breadcrumb / Return Pill */}
+        <div className="flex items-center justify-between gap-3 border-b-2 border-zinc-900 dark:border-zinc-700 pb-3">
           <Link
             href="/"
             onClick={() => playClickSound()}
             className="retro-btn flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>&lt; <span className="hidden sm:inline">RETURN TO </span>WAPAS PADHLE</span>
+            <span>&lt; Return to Study Deck</span>
           </Link>
-
-          <div className="flex items-center space-x-2 shrink-0">
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="retro-btn p-1.5 sm:p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-            </button>
+          <div className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">
+            Author Profile
           </div>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8 relative z-10">
         {/* Retro Discount Window */}
         <section className="retro-box rounded-xl bg-amber-100 dark:bg-amber-950/40 p-5 sm:p-7 space-y-4">
           {/* Window Bar */}
@@ -392,18 +429,26 @@ export default function AuthorPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] mt-auto py-6 relative z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 gap-3">
-          <p>Built with ❤️ by Abhishek Rai • Scale with Rai.</p>
-          <Link
-            href="/"
-            onClick={() => playClickSound()}
-            className="retro-link font-bold"
-          >
-            &lt; Return to Wapas Padhle
-          </Link>
-        </div>
-      </footer>
+      <Footer />
+
+      {/* Add Concept Modal */}
+      {isAddModalOpen && (
+        <AddConceptModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAdd={handleAddItem}
+        />
+      )}
+
+      {/* Telegram Modal */}
+      {isTelegramModalOpen && (
+        <TelegramModal
+          isOpen={isTelegramModalOpen}
+          onClose={() => setIsTelegramModalOpen(false)}
+          settings={telegramSettings}
+          onSaveSettings={handleSaveTelegram}
+        />
+      )}
     </div>
   );
 }

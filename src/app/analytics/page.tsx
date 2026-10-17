@@ -22,9 +22,6 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
-  Layers,
-  Clock,
   Compass,
 } from 'lucide-react';
 
