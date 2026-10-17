@@ -236,7 +236,7 @@ export function QueueList({
               <div
                 key={item.id}
                 onClick={() => handleCardClick(item)}
-                className={`retro-box rounded-xl p-5 text-left cursor-pointer transition-all ${
+                className={`retro-box w-full min-w-0 rounded-xl p-3.5 sm:p-5 text-left cursor-pointer transition-all ${
                   isSelected
                     ? 'border-2 border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-[4px_4px_0px_0px_#059669]'
                     : 'bg-white dark:bg-zinc-900 hover:bg-yellow-50/30 dark:hover:bg-zinc-800/60'
@@ -244,12 +244,12 @@ export function QueueList({
               >
                 {/* Header with Category, Tags & Status Badges */}
                 <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1.5 flex-1">
+                  <div className="flex items-start justify-between gap-2.5 sm:gap-3">
+                    <div className="space-y-1.5 flex-1 min-w-0">
                       {/* Tags & Badges Row */}
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                         {item.category && (
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-900 dark:border-zinc-700">
+                          <span className="font-mono text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-900 dark:border-zinc-700 shrink-0">
                             {item.category}
                           </span>
                         )}
@@ -257,7 +257,7 @@ export function QueueList({
                         {item.tags?.map((tag) => (
                           <span
                             key={tag}
-                            className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 border border-zinc-900 dark:border-zinc-700 flex items-center space-x-0.5"
+                            className="font-mono text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 border border-zinc-900 dark:border-zinc-700 flex items-center space-x-0.5 shrink-0"
                           >
                             <Hash className="w-2.5 h-2.5 text-zinc-700 dark:text-amber-400" />
                             <span>{tag}</span>
@@ -265,24 +265,24 @@ export function QueueList({
                         ))}
 
                         {status === 'OVERDUE' && (
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900">
+                          <span className="font-mono text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900 shrink-0">
                             [OVERDUE]
                           </span>
                         )}
 
                         {status === 'DUE_TODAY' && (
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900">
+                          <span className="font-mono text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900 shrink-0">
                             [DUE TODAY]
                           </span>
                         )}
 
                         {isSelected ? (
-                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-500 text-white border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] flex items-center space-x-1.5">
-                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                            <span>★ IN FOCUS REVISER</span>
+                          <span className="font-mono text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded bg-emerald-500 text-white border-2 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b] flex items-center space-x-1 shrink-0">
+                            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white animate-pulse" />
+                            <span>★ IN FOCUS</span>
                           </span>
                         ) : (
-                          <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center space-x-1">
+                          <span className="font-mono text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 flex items-center space-x-1 shrink-0">
                             <Eye className="w-3 h-3" />
                             <span>Click to review</span>
                           </span>
@@ -290,7 +290,7 @@ export function QueueList({
                       </div>
 
                       {/* Card Title */}
-                      <h4 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white line-clamp-2 pt-1 hover:text-blue-700 dark:hover:text-blue-400">
+                      <h4 className="text-sm sm:text-base md:text-lg font-bold text-zinc-900 dark:text-white line-clamp-2 pt-0.5 hover:text-blue-700 dark:hover:text-blue-400 break-words">
                         {item.title}
                       </h4>
                     </div>
@@ -305,27 +305,27 @@ export function QueueList({
                         className="retro-btn p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0"
                         title="Open external documentation"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </a>
                     )}
                   </div>
 
                   {/* Notes snippet */}
                   {item.notes && (
-                    <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-relaxed pt-0.5 font-normal">
+                    <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-relaxed pt-0.5 font-normal break-words">
                       {item.notes}
                     </p>
                   )}
                 </div>
 
                 {/* Footer metadata & quick actions */}
-                <div className="pt-3 border-t-2 border-zinc-900 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-2.5 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700">
+                <div className="pt-2.5 sm:pt-3 border-t-2 border-zinc-900 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-[10px] sm:text-xs">
                       {rev?.interval ? `${rev.interval}d interval` : 'New card'}
                     </span>
                     {rev?.nextReviewDate && (
-                      <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700">
+                      <span className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-[10px] sm:text-xs">
                         Next: {rev.nextReviewDate}
                       </span>
                     )}
@@ -333,33 +333,35 @@ export function QueueList({
 
                   {/* Quick Action buttons with Retro Tactile Styling */}
                   <div
-                    className="flex items-center space-x-1.5 shrink-0"
+                    className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pt-0.5 sm:pt-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'struggled')}
-                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer"
-                      title="Mark struggled (review tomorrow)"
-                    >
-                      ❌ Hard
-                    </button>
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer"
-                      title="Mark comfortable"
-                    >
-                      ✓ Good
-                    </button>
-                    <button
-                      onClick={(e) => handleRate(e, item.id, 'mastered')}
-                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer"
-                      title="Mark mastered (longer spacing)"
-                    >
-                      ⭐ Easy
-                    </button>
+                    <div className="flex items-center space-x-1 sm:space-x-1.5">
+                      <button
+                        onClick={(e) => handleRate(e, item.id, 'struggled')}
+                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer"
+                        title="Mark struggled (review tomorrow)"
+                      >
+                        ❌ Hard
+                      </button>
+                      <button
+                        onClick={(e) => handleRate(e, item.id, 'comfortable')}
+                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer"
+                        title="Mark comfortable"
+                      >
+                        ✓ Good
+                      </button>
+                      <button
+                        onClick={(e) => handleRate(e, item.id, 'mastered')}
+                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-[11px] sm:text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer"
+                        title="Mark mastered (longer spacing)"
+                      >
+                        ⭐ Easy
+                      </button>
+                    </div>
                     <button
                       onClick={(e) => handleDelete(e, item.id)}
-                      className="retro-btn p-1 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 cursor-pointer ml-1"
+                      className="retro-btn p-1 sm:p-1.5 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 cursor-pointer ml-1"
                       title="Delete card"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -44,8 +44,8 @@ export function AddConceptModal({ isOpen, onClose, onAdd }: AddConceptModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="retro-box relative w-full max-w-lg rounded-xl bg-[#fffefc] dark:bg-zinc-950 p-6 sm:p-7 text-left">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="retro-box relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-[#fffefc] dark:bg-zinc-950 p-4 sm:p-7 text-left">
         {/* Retro Window Title Bar */}
         <div className="flex items-center justify-between border-b-2 border-zinc-900 dark:border-zinc-700 pb-3 mb-4">
           <div className="flex items-center space-x-2">

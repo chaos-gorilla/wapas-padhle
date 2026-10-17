@@ -111,24 +111,24 @@ export default function AuthorPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f6f0] dark:bg-[#111113] text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-yellow-200 relative">
+    <div className="min-h-screen w-full flex flex-col bg-[#f8f6f0] dark:bg-[#111113] text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-yellow-200 relative overflow-x-hidden">
       {/* Top Retro Navbar */}
-      <header className="border-b-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] sticky top-0 z-30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="w-full border-b-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] sticky top-0 z-30">
+        <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
           <Link
             href="/"
             onClick={() => playClickSound()}
-            className="retro-btn flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white cursor-pointer"
+            className="retro-btn flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>&lt; RETURN TO WAPAS PADHLE</span>
+            <span>&lt; <span className="hidden sm:inline">RETURN TO </span>WAPAS PADHLE</span>
           </Link>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 shrink-0">
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="retro-btn p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer"
+              className="retro-btn p-1.5 sm:p-2 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer"
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
