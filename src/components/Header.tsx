@@ -14,6 +14,7 @@ import {
   Sparkles,
   BarChart3,
   Layers,
+  UploadCloud,
 } from 'lucide-react';
 import { TelegramSettings } from '@/types';
 import { isSoundEnabled, setSoundEnabled, playClickSound } from '@/lib/sound';
@@ -22,6 +23,7 @@ interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
   onOpenAddModal?: () => void;
+  onOpenCsvModal?: () => void;
   onOpenTelegramModal?: () => void;
   telegramSettings?: TelegramSettings;
   dueCount?: number;
@@ -31,6 +33,7 @@ export function Header({
   isDark,
   onToggleTheme,
   onOpenAddModal,
+  onOpenCsvModal,
   onOpenTelegramModal,
   telegramSettings,
   dueCount,
@@ -139,6 +142,22 @@ export function Header({
               {isConnected && (
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 border border-zinc-900" />
               )}
+            </button>
+          )}
+
+          {/* Import CSV Button */}
+          {onOpenCsvModal && (
+            <button
+              onClick={() => {
+                playClickSound();
+                onOpenCsvModal();
+              }}
+              className="retro-btn flex items-center space-x-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer shrink-0 border border-zinc-900 dark:border-zinc-700"
+              title="Bulk import tasks from a CSV file"
+            >
+              <UploadCloud className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden sm:inline">Import</span>
+              <span> CSV</span>
             </button>
           )}
 

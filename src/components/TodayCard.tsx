@@ -30,13 +30,14 @@ export function TodayCard({
   onShuffle,
   onOpenAddModal,
 }: TodayCardProps) {
-  // Start notes collapsed when moving to a new card to encourage recall first
+  const [prevItemId, setPrevItemId] = useState(item?.id);
   const [showNotes, setShowNotes] = useState(false);
 
-  // When card changes, reset notes visibility
-  useEffect(() => {
+  // When card changes, reset notes visibility during render (React recommended pattern)
+  if (item?.id !== prevItemId) {
+    setPrevItemId(item?.id);
     setShowNotes(false);
-  }, [item?.id]);
+  }
 
   // Global Keyboard Shortcuts for lightning-fast active recall
   useEffect(() => {

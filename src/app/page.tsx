@@ -19,6 +19,7 @@ import { Footer } from '@/components/Footer';
 import { TodayCard } from '@/components/TodayCard';
 import { QueueList, TabType } from '@/components/QueueList';
 import { AddConceptModal } from '@/components/AddConceptModal';
+import { CsvImportModal } from '@/components/CsvImportModal';
 import { TelegramModal } from '@/components/TelegramModal';
 import { playClickSound } from '@/lib/sound';
 import {
@@ -87,6 +88,7 @@ export default function Home() {
     getRecommendedItem(loadItems(), loadReviews())
   );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [sessionReviewsCount, setSessionReviewsCount] = useState(0);
   const [mobileTab, setMobileTab] = useState<'reviser' | 'queue'>('reviser');
@@ -157,6 +159,17 @@ export default function Home() {
     }
   };
 
+  const handleBatchImportSuccess = (
+    updatedItems: ConceptItem[],
+    updatedReviews: Record<string, ReviewRecord>
+  ) => {
+    setItems(updatedItems);
+    setReviews(updatedReviews);
+    if (!todayItem && updatedItems.length > 0) {
+      setTodayItem(getRecommendedItem(updatedItems, updatedReviews));
+    }
+  };
+
   const handleDeleteItem = (id: string) => {
     const updated = deleteItem(id);
     setItems(updated);
@@ -205,6 +218,7 @@ export default function Home() {
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onOpenAddModal={() => setIsAddModalOpen(true)}
+        onOpenCsvModal={() => setIsCsvModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         telegramSettings={telegramSettings}
         dueCount={dueCount}
@@ -522,6 +536,14 @@ export default function Home() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddItem}
+      />
+
+      {/* CSV Batch Ingestion Modal */}
+      <CsvImportModal
+        isOpen={isCsvModalOpen}
+        onClose={() => setIsCsvModalOpen(false)}
+        existingItems={items}
+        onImportSuccess={handleBatchImportSuccess}
       />
 
       {/* Telegram Modal */}

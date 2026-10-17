@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { TelegramSettings } from '@/types';
-import { X, Send, ShieldCheck, ArrowRight, ExternalLink } from 'lucide-react';
+import { X, ShieldCheck, ArrowRight } from 'lucide-react';
 
 interface TelegramModalProps {
   settings: TelegramSettings;

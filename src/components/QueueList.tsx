@@ -9,10 +9,6 @@ import {
   CalendarRange,
   Trash2,
   Layers,
-  ArrowUpDown,
-  Filter,
-  CheckCircle,
-  Clock,
   AlertCircle,
   Hash,
   Eye,
@@ -112,10 +108,6 @@ export function QueueList({
       return dateA.localeCompare(dateB);
     });
   }, [items, reviews, activeTab, search, sortBy, dueItems, backlogItems, upcomingItems]);
-
-  function targetQ(q: string) {
-    return q;
-  }
 
   const handleCardClick = (item: ConceptItem) => {
     playClickSound();
