@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConceptItem, RecallConfidence, ReviewRecord } from '@/types';
 import {
   ExternalLink,
@@ -30,7 +30,53 @@ export function TodayCard({
   onShuffle,
   onOpenAddModal,
 }: TodayCardProps) {
-  const [showNotes, setShowNotes] = useState(true);
+  // Start notes collapsed when moving to a new card to encourage recall first
+  const [showNotes, setShowNotes] = useState(false);
+
+  // When card changes, reset notes visibility
+  useEffect(() => {
+    setShowNotes(false);
+  }, [item?.id]);
+
+  // Global Keyboard Shortcuts for lightning-fast active recall
+  useEffect(() => {
+    if (!item) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput =
+        activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        activeEl?.getAttribute('contenteditable') === 'true';
+
+      if (isInput) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        playClickSound();
+        setShowNotes((prev) => !prev);
+      } else if (e.key === '1' || e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        playClickSound();
+        onRate('struggled');
+      } else if (e.key === '2' || e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        playClickSound();
+        onRate('comfortable');
+      } else if (e.key === '3' || e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        playMasteredChime();
+        onRate('mastered');
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        playClickSound();
+        onShuffle();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [item, onRate, onShuffle]);
 
   if (!item) {
     return (
@@ -41,7 +87,7 @@ export function TodayCard({
         <h3 className="text-lg font-black text-zinc-900 dark:text-white font-mono">
           [QUEUE CAUGHT UP]
         </h3>
-        <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-md mx-auto leading-relaxed font-mono">
           Select any card from your queue on the left to study it now, or add a newly learned concept to start your spaced repetition cycle.
         </p>
         <button
@@ -49,7 +95,7 @@ export function TodayCard({
             playClickSound();
             onOpenAddModal();
           }}
-          className="retro-btn mt-5 px-5 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
+          className="retro-btn mt-5 px-5 py-2.5 rounded-lg text-xs sm:text-sm font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer font-mono"
         >
           + Add New Concept Card
         </button>
@@ -113,10 +159,13 @@ export function TodayCard({
               onShuffle();
             }}
             className="retro-btn flex items-center space-x-1 sm:space-x-1.5 text-zinc-800 dark:text-zinc-200 cursor-pointer py-1 px-2 sm:px-2.5 rounded bg-white dark:bg-zinc-800 text-xs font-mono font-bold"
-            title="Pick another random concept from your queue"
+            title="Pick another card [Shortcut: S]"
           >
             <RefreshCw className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
             <span>Shuffle</span>
+            <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-700 border border-zinc-400 text-zinc-600 dark:text-zinc-300">
+              S
+            </kbd>
           </button>
         </div>
       </div>
@@ -155,7 +204,8 @@ export function TodayCard({
                   playClickSound();
                   setShowNotes(!showNotes);
                 }}
-                className="retro-btn px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center space-x-1 cursor-pointer shrink-0 ml-2"
+                className="retro-btn px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center space-x-1.5 cursor-pointer shrink-0 ml-2"
+                title="Toggle Notes [Shortcut: Space]"
               >
                 {showNotes ? (
                   <>
@@ -168,6 +218,9 @@ export function TodayCard({
                     <span>Reveal<span className="hidden sm:inline"> Notes</span></span>
                   </>
                 )}
+                <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-700 border border-zinc-400 text-zinc-600 dark:text-zinc-300">
+                  Space
+                </kbd>
               </button>
             </div>
 
@@ -181,13 +234,12 @@ export function TodayCard({
                   playClickSound();
                   setShowNotes(true);
                 }}
-                className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 italic bg-amber-50/70 dark:bg-zinc-950/60 p-3.5 sm:p-5 rounded-lg border-2 border-dashed border-zinc-900 dark:border-zinc-700 text-center cursor-pointer hover:bg-amber-100/70 dark:hover:bg-zinc-900 transition-colors font-mono"
+                className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 italic bg-amber-50/70 dark:bg-zinc-950/60 p-3.5 sm:p-5 rounded-lg border-2 border-dashed border-zinc-900 dark:border-zinc-700 text-center cursor-pointer hover:bg-amber-100/70 dark:hover:bg-zinc-900 transition-colors font-mono space-y-1"
               >
-                💡 Test your memory first! Can you explain the core invariant before peeking?
-                <br />
-                <span className="font-bold underline text-zinc-900 dark:text-zinc-200 mt-1 inline-block">
-                  [Click to Reveal Notes]
-                </span>
+                <div>💡 Test your memory first! Can you articulate the core invariants?</div>
+                <div className="font-bold underline text-zinc-900 dark:text-zinc-200">
+                  [Click or press Space to Reveal Notes]
+                </div>
               </div>
             )}
           </div>
@@ -218,7 +270,7 @@ export function TodayCard({
         <div className="flex items-center justify-between text-xs sm:text-sm font-bold font-mono">
           <p className="text-zinc-900 dark:text-white flex items-center space-x-1.5 truncate">
             <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 shrink-0" />
-            <span className="truncate">STEP 3: HOW WELL DID YOU RECALL THIS?</span>
+            <span className="truncate">HOW WELL DID YOU RECALL THIS?</span>
           </p>
           <span className="text-[10px] sm:text-xs font-mono font-bold text-zinc-500 dark:text-zinc-400 shrink-0 ml-1">
             [SM-2]
@@ -228,36 +280,48 @@ export function TodayCard({
         <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
           <button
             onClick={() => handleRate('struggled')}
-            className="retro-btn p-2 sm:p-3.5 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 text-center cursor-pointer flex flex-col items-center justify-center min-h-[50px] sm:min-h-[64px]"
+            className="retro-btn p-2 sm:p-3 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 text-center cursor-pointer flex flex-col items-center justify-center min-h-[52px] sm:min-h-[64px] relative"
+            title="Recall blanked or struggled [Shortcut: 1]"
           >
             <div className="font-mono font-black text-xs sm:text-base flex items-center justify-center space-x-1">
               <span>❌ Hard</span>
+              <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-rose-200 dark:bg-rose-900 border border-rose-900 text-rose-950 dark:text-rose-200">
+                1
+              </kbd>
             </div>
-            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 sm:mt-1 opacity-90 truncate max-w-full">
+            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 opacity-90 truncate max-w-full">
               +1d<span className="hidden sm:inline"> (revisit)</span>
             </span>
           </button>
 
           <button
             onClick={() => handleRate('comfortable')}
-            className="retro-btn p-2 sm:p-3.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 text-center cursor-pointer flex flex-col items-center justify-center min-h-[50px] sm:min-h-[64px]"
+            className="retro-btn p-2 sm:p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 text-center cursor-pointer flex flex-col items-center justify-center min-h-[52px] sm:min-h-[64px] relative"
+            title="Recalled after brief thought [Shortcut: 2]"
           >
             <div className="font-mono font-black text-xs sm:text-base flex items-center justify-center space-x-1">
               <span>✓ Good</span>
+              <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-700 border border-zinc-600 text-zinc-900 dark:text-zinc-100">
+                2
+              </kbd>
             </div>
-            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 sm:mt-1 opacity-90 truncate max-w-full">
+            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 opacity-90 truncate max-w-full">
               +{currentInterval}d<span className="hidden sm:inline"> (standard)</span>
             </span>
           </button>
 
           <button
             onClick={() => handleRate('mastered')}
-            className="retro-btn p-2 sm:p-3.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 text-center cursor-pointer flex flex-col items-center justify-center min-h-[50px] sm:min-h-[64px]"
+            className="retro-btn p-2 sm:p-3 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 text-center cursor-pointer flex flex-col items-center justify-center min-h-[52px] sm:min-h-[64px] relative"
+            title="Instant fluid recall [Shortcut: 3]"
           >
             <div className="font-mono font-black text-xs sm:text-base flex items-center justify-center space-x-1">
               <span>⭐ Easy</span>
+              <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-emerald-200 dark:bg-emerald-900 border border-emerald-900 text-emerald-950 dark:text-emerald-200">
+                3
+              </kbd>
             </div>
-            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 sm:mt-1 opacity-90 truncate max-w-full">
+            <span className="text-[10px] sm:text-xs font-mono block mt-0.5 opacity-90 truncate max-w-full">
               +2x<span className="hidden sm:inline"> (longer)</span>
             </span>
           </button>

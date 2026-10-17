@@ -17,6 +17,18 @@ export function Footer() {
         </p>
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 font-bold">
           <Link
+            href="/"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
+          >
+            Study
+          </Link>
+          <Link
+            href="/analytics"
+            className="retro-link text-zinc-800 dark:text-zinc-200"
+          >
+            Analytics
+          </Link>
+          <Link
             href="/author"
             className="retro-link text-zinc-800 dark:text-zinc-200"
           >

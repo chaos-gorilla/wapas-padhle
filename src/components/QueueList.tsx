@@ -23,25 +23,34 @@ interface QueueListProps {
   items: ConceptItem[];
   reviews: Record<string, ReviewRecord>;
   selectedItemId?: string | null;
+  activeTab?: TabType;
+  onTabChange?: (tab: TabType) => void;
   onSelectItem: (item: ConceptItem) => void;
   onRateItem: (itemId: string, confidence: RecallConfidence) => void;
   onDeleteItem: (itemId: string) => void;
   onRescheduleBacklog: () => void;
 }
 
-type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
-type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
+export type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
+export type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
 
 export function QueueList({
   items,
   reviews,
   selectedItemId,
+  activeTab: controlledTab,
+  onTabChange,
   onSelectItem,
   onRateItem,
   onDeleteItem,
   onRescheduleBacklog,
 }: QueueListProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('due');
+  const [internalTab, setInternalTab] = useState<TabType>('due');
+  const activeTab = controlledTab !== undefined ? controlledTab : internalTab;
+  const setActiveTab = (tab: TabType) => {
+    if (onTabChange) onTabChange(tab);
+    setInternalTab(tab);
+  };
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortType>('due_asc');
 
