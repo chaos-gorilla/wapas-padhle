@@ -642,31 +642,31 @@ export function QueueList({
                         )}
                       </div>
                     ) : (
-                      /* 3-Button Recall Rating Grid on Mobile / Flex on Desktop */
+                      /* 3-Button Recall Rating — matches ActiveRecallModal labels */
                       <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:space-x-1.5 w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={(e) => handleRate(e, item.id, 'struggled')}
-                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer text-center"
-                          title="Mark struggled (review tomorrow)"
-                        >
-                          ❌ Hard
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer text-center"
-                          title="Mark comfortable"
-                        >
-                          ✓ Good
-                        </button>
                         <button
                           type="button"
                           onClick={(e) => handleRate(e, item.id, 'mastered')}
                           className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer text-center"
-                          title="Mark mastered (longer spacing)"
+                          title="Mastered — bonus interval spacing"
                         >
-                          ⭐ Easy
+                          🚀 Mastered
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRate(e, item.id, 'comfortable')}
+                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-sky-100 dark:bg-sky-950 text-sky-950 dark:text-sky-200 border-2 border-sky-900 cursor-pointer text-center"
+                          title="Comfortable — standard SM-2 interval"
+                        >
+                          🧘 Comfortable
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRate(e, item.id, 'struggled')}
+                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 border-2 border-amber-900 cursor-pointer text-center"
+                          title="Struggled — resets interval to 1 day"
+                        >
+                          🧗 Struggled
                         </button>
                       </div>
                     )}

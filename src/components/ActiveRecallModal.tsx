@@ -784,28 +784,6 @@ export function ActiveRecallModal({
                       </div>
                     )}
 
-                    {/* Action Button: Confirm Grade & Advance */}
-                    {activeStepItem && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (activeStepItem.key === 'mastered') {
-                            playMasteredChime();
-                          } else {
-                            playClickSound();
-                          }
-                          commitRating(activeStepItem.key);
-                        }}
-                        className={`w-full retro-btn py-2 sm:py-2.5 px-4 rounded-lg font-mono font-black text-xs sm:text-sm border-2 border-zinc-950 flex items-center justify-center space-x-2 cursor-pointer shadow-[2px_2px_0px_0px_#18181b] transition-all ${activeStepItem.colorScheme.confirmBtn}`}
-                        title={`Confirm ${activeStepItem.label} grade and advance to next card [Shortcut: Enter]`}
-                      >
-                        <span>Confirm Grade: {activeStepItem.emoji} {activeStepItem.label}</span>
-                        <span className="opacity-70 text-xs">➔</span>
-                        <kbd className="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/90 dark:bg-zinc-900/90 border border-zinc-950 text-zinc-950 dark:text-zinc-50">
-                          Enter ↵
-                        </kbd>
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
@@ -813,40 +791,60 @@ export function ActiveRecallModal({
           )}
         </div>
 
-        {/* Modal Footer with Keyboard Shortcuts Legend (Desktop) & Compact Close (Mobile) */}
-        <div className="border-t-2 border-zinc-900 dark:border-zinc-700 p-2 sm:p-3 bg-zinc-100 dark:bg-zinc-900/80 rounded-b-xl flex items-center justify-between text-[11px] font-mono text-zinc-600 dark:text-zinc-400 shrink-0 gap-2">
-          {/* Desktop Shortcuts */}
-          <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
-            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Space</kbd> Notes</span>
-            <span>•</span>
-            {isTaskGradedToday ? (
-              <>
-                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">R</kbd> Reset Evaluation</span>
-                <span>•</span>
-              </>
-            ) : (
-              <>
-                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">1-4</kbd> Slider</span>
-                <span>•</span>
-                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Enter</kbd> Confirm</span>
-                <span>•</span>
-              </>
-            )}
-            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
-            <span>•</span>
-            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
-          </div>
+        {/* Sticky Footer: Confirm Grade (left) + Shortcuts (center) + Close (right) */}
+        <div className="border-t-2 border-zinc-900 dark:border-zinc-700 p-2 sm:p-3 bg-zinc-100 dark:bg-zinc-900/80 rounded-b-xl flex items-center justify-between gap-2 shrink-0">
+          {/* Left: Confirm Grade button (only when not yet graded) */}
+          {item && !isTaskGradedToday ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (activeStepItem.key === 'mastered') {
+                  playMasteredChime();
+                } else {
+                  playClickSound();
+                }
+                commitRating(activeStepItem.key);
+              }}
+              className={`retro-btn flex-1 sm:flex-initial py-1.5 sm:py-2 px-3 sm:px-5 rounded-lg font-mono font-black text-xs sm:text-sm border-2 border-zinc-950 flex items-center justify-center space-x-2 cursor-pointer shadow-[2px_2px_0px_0px_#18181b] transition-all ${activeStepItem.colorScheme.confirmBtn}`}
+              title={`Confirm ${activeStepItem.label} grade and advance [Shortcut: Enter]`}
+            >
+              <span>{activeStepItem.emoji} Confirm: {activeStepItem.label}</span>
+              <kbd className="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/90 dark:bg-zinc-900/90 border border-zinc-950 text-zinc-950 dark:text-zinc-50">
+                Enter ↵
+              </kbd>
+            </button>
+          ) : (
+            /* Shortcuts legend on desktop when graded */
+            <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
+              <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Space</kbd> Notes</span>
+              {isTaskGradedToday && (
+                <><span>•</span><span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">R</kbd> Reset</span></>
+              )}
+              <span>•</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
+              <span>•</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
+            </div>
+          )}
 
-          {/* Mobile tip */}
-          <div className="flex sm:hidden items-center space-x-1 text-[11px] font-mono text-zinc-500">
-            <span>Tap slider or Confirm</span>
-          </div>
+          {/* Center: Shortcuts legend (only when not graded, desktop) */}
+          {item && !isTaskGradedToday && (
+            <div className="hidden sm:flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
+              <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">1-4</kbd> Slider</span>
+              <span>•</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
+              <span>•</span>
+              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
+            </div>
+          )}
 
+          {/* Right: Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="retro-btn px-3 py-1 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold font-mono cursor-pointer ml-auto"
+            className="retro-btn px-3 py-1.5 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold font-mono cursor-pointer shrink-0"
           >
             Close
           </button>
