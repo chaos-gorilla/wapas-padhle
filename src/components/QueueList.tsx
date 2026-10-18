@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ConceptItem, RecallConfidence, ReviewRecord } from '@/types';
-import { getItemStatus } from '@/lib/sm2';
+import { getItemStatus, isGradedToday } from '@/lib/sm2';
 import {
   Search,
   ExternalLink,
@@ -20,11 +20,14 @@ import {
   SlidersHorizontal,
   X,
   Tag,
+  CheckCircle2,
+  RotateCcw,
+  Flame,
 } from 'lucide-react';
 import { playClickSound, playMasteredChime } from '@/lib/sound';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
-export type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
+export type TabType = 'due_overdue' | 'due' | 'backlog' | 'graded_today' | 'upcoming' | 'all';
 export type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
 export type ViewMode = 'detailed' | 'condensed';
 
@@ -47,6 +50,8 @@ interface QueueListProps {
   onDeleteItem: (itemId: string) => void;
   onRescheduleBacklog: () => void;
   onOpenMobileFilter?: () => void;
+  onResetEvaluation?: (itemId: string) => void;
+  onOpenRedistributeModal?: () => void;
 }
 
 export function QueueList({
@@ -67,9 +72,11 @@ export function QueueList({
   onDeleteItem,
   onRescheduleBacklog,
   onOpenMobileFilter,
+  onResetEvaluation,
+  onOpenRedistributeModal,
 }: QueueListProps) {
-  // Tab state (controlled vs internal)
-  const [internalTab, setInternalTab] = useState<TabType>('due');
+  // Tab state (controlled vs internal) - defaults to 'due_overdue'
+  const [internalTab, setInternalTab] = useState<TabType>('due_overdue');
   const activeTab = controlledTab !== undefined ? controlledTab : internalTab;
   const setActiveTab = (tab: TabType) => {
     if (onTabChange) onTabChange(tab);
@@ -118,28 +125,58 @@ export function QueueList({
     localStorage.setItem('wapas_view_mode', mode);
   };
 
+  const gradedTodayItems = useMemo(
+    () => items.filter((item) => isGradedToday(reviews[item.id])),
+    [items, reviews]
+  );
+
   const dueItems = useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'DUE_TODAY'),
+    () =>
+      items.filter(
+        (item) =>
+          (getItemStatus(reviews[item.id]) === 'DUE_TODAY' ||
+            getItemStatus(reviews[item.id]) === 'NEW') &&
+          !isGradedToday(reviews[item.id])
+      ),
     [items, reviews]
   );
 
   const backlogItems = useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'OVERDUE'),
+    () =>
+      items.filter(
+        (item) =>
+          getItemStatus(reviews[item.id]) === 'OVERDUE' &&
+          !isGradedToday(reviews[item.id])
+      ),
     [items, reviews]
   );
 
+  const dueOverdueItems = useMemo(
+    () => [...backlogItems, ...dueItems],
+    [backlogItems, dueItems]
+  );
+
   const upcomingItems = useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'UPCOMING'),
+    () =>
+      items.filter(
+        (item) =>
+          getItemStatus(reviews[item.id]) === 'UPCOMING' &&
+          !isGradedToday(reviews[item.id])
+      ),
     [items, reviews]
   );
 
   // Filtered and sorted cards list
   const filteredList = useMemo(() => {
     let list: ConceptItem[] = [];
-    if (activeTab === 'due') {
+    if (activeTab === 'due_overdue') {
+      list = dueOverdueItems;
+    } else if (activeTab === 'due') {
       list = dueItems;
     } else if (activeTab === 'backlog') {
       list = backlogItems;
+    } else if (activeTab === 'graded_today') {
+      list = gradedTodayItems;
     } else if (activeTab === 'upcoming') {
       list = upcomingItems;
     } else {
@@ -182,7 +219,7 @@ export function QueueList({
       const dateB = revB?.nextReviewDate || '9999-99-99';
       return dateA.localeCompare(dateB);
     });
-  }, [items, reviews, activeTab, selectedCategory, search, sortBy, dueItems, backlogItems, upcomingItems]);
+  }, [items, reviews, activeTab, selectedCategory, search, sortBy, dueOverdueItems, dueItems, backlogItems, gradedTodayItems, upcomingItems]);
 
   const handleCardClick = (item: ConceptItem) => {
     playClickSound();
@@ -220,7 +257,7 @@ export function QueueList({
   };
 
   // Active filters count for mobile indicator
-  const activeFiltersCount = (selectedCategory ? 1 : 0) + (search ? 1 : 0) + (activeTab !== 'all' ? 1 : 0);
+  const activeFiltersCount = (selectedCategory ? 1 : 0) + (search ? 1 : 0) + (activeTab !== 'due_overdue' ? 1 : 0);
 
   return (
     <div className="space-y-3.5 w-full">
@@ -301,14 +338,14 @@ export function QueueList({
         <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs font-mono font-bold">
           <button
             type="button"
-            onClick={() => setActiveTab('all')}
-            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
-              activeTab === 'all'
+            onClick={() => setActiveTab('due_overdue')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors flex items-center space-x-1 ${
+              activeTab === 'due_overdue'
                 ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
             }`}
           >
-            All ({items.length})
+            <span>🔥 Due &amp; Overdue ({dueOverdueItems.length})</span>
           </button>
           <button
             type="button"
@@ -334,6 +371,17 @@ export function QueueList({
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('graded_today')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'graded_today'
+                ? 'bg-emerald-300 dark:bg-emerald-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            ✓ Graded Today ({gradedTodayItems.length})
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('upcoming')}
             className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
               activeTab === 'upcoming'
@@ -343,21 +391,32 @@ export function QueueList({
           >
             Upcoming ({upcomingItems.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'all'
+                ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            All ({items.length})
+          </button>
         </div>
       </div>
 
       {/* ACTIVE FILTER TAG CHIPS (BREADCRUMBS) - Desktop & Mobile */}
-      {(selectedCategory || search || activeTab !== 'all') && (
+      {(selectedCategory || search || activeTab !== 'due_overdue') && (
         <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
           <span className="text-zinc-500 text-[11px]">Active:</span>
 
-          {activeTab !== 'all' && (
+          {activeTab !== 'due_overdue' && (
             <button
               type="button"
-              onClick={() => setActiveTab('all')}
+              onClick={() => setActiveTab('due_overdue')}
               className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-900/30 text-[11px] font-bold"
             >
-              <span>Status: {activeTab.toUpperCase()}</span>
+              <span>Status: {activeTab.replace('_', ' ').toUpperCase()}</span>
               <X className="w-3 h-3 ml-0.5" />
             </button>
           )}
@@ -389,36 +448,40 @@ export function QueueList({
             type="button"
             onClick={() => {
               playClickSound();
-              setActiveTab('all');
+              setActiveTab('due_overdue');
               setSelectedCategory(null);
               setSearch('');
             }}
             className="text-[11px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline cursor-pointer ml-1"
           >
-            Clear all
+            Reset to Due &amp; Overdue
           </button>
         </div>
       )}
 
-      {/* Backlog recovery alert */}
-      {activeTab === 'backlog' && backlogItems.length > 0 && (
+      {/* Backlog recovery & Re-distribution alert banner */}
+      {backlogItems.length > 0 && (activeTab === 'backlog' || activeTab === 'due_overdue') && (
         <div className="retro-box p-3.5 sm:p-4 rounded-xl bg-rose-100 dark:bg-rose-950/40 border-2 border-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm w-full">
           <div className="flex items-center space-x-2">
             <AlertCircle className="w-5 h-5 text-rose-700 shrink-0" />
             <span className="text-rose-950 dark:text-rose-200 font-bold">
-              {backlogItems.length} overdue cards detected. Avoid cognitive overload by spreading them across 3 days.
+              {backlogItems.length} overdue task{backlogItems.length !== 1 ? 's' : ''} detected. Re-distribute across X days to stay on top of your schedule!
             </span>
           </div>
           <button
             type="button"
             onClick={() => {
               playClickSound();
-              onRescheduleBacklog();
+              if (onOpenRedistributeModal) {
+                onOpenRedistributeModal();
+              } else {
+                onRescheduleBacklog();
+              }
             }}
-            className="retro-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-rose-900 border-2 border-rose-900 cursor-pointer shrink-0"
+            className="retro-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-rose-900 dark:text-rose-200 border-2 border-rose-900 cursor-pointer shrink-0 shadow-[2px_2px_0px_0px_#881337]"
           >
-            <CalendarRange className="w-3.5 h-3.5 text-rose-700" />
-            <span>Redistribute Over 3 Days</span>
+            <CalendarRange className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
+            <span>Re-distribute Across Days ➔</span>
           </button>
         </div>
       )}
@@ -453,6 +516,7 @@ export function QueueList({
           {filteredList.map((item) => {
             const rev = reviews[item.id];
             const status = getItemStatus(rev);
+            const cardGradedToday = isGradedToday(rev);
             const isSelected = selectedItemId === item.id;
 
             return (
@@ -487,17 +551,19 @@ export function QueueList({
                           </span>
                         ))}
 
-                        {status === 'OVERDUE' && (
+                        {cardGradedToday ? (
+                          <span className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900 shrink-0">
+                            [GRADED TODAY ✓]
+                          </span>
+                        ) : status === 'OVERDUE' ? (
                           <span className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900 shrink-0">
                             [OVERDUE]
                           </span>
-                        )}
-
-                        {status === 'DUE_TODAY' && (
+                        ) : status === 'DUE_TODAY' ? (
                           <span className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900 shrink-0">
                             [DUE TODAY]
                           </span>
-                        )}
+                        ) : null}
 
                         <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline-flex items-center space-x-1 shrink-0 ml-auto">
                           <Eye className="w-3 h-3" />
@@ -554,33 +620,56 @@ export function QueueList({
                     className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 pt-1 sm:pt-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {/* 3-Button Recall Rating Grid on Mobile / Flex on Desktop */}
-                    <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:space-x-1.5 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={(e) => handleRate(e, item.id, 'struggled')}
-                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer text-center"
-                        title="Mark struggled (review tomorrow)"
-                      >
-                        ❌ Hard
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer text-center"
-                        title="Mark comfortable"
-                      >
-                        ✓ Good
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleRate(e, item.id, 'mastered')}
-                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer text-center"
-                        title="Mark mastered (longer spacing)"
-                      >
-                        ⭐ Easy
-                      </button>
-                    </div>
+                    {cardGradedToday ? (
+                      <div className="flex items-center justify-between sm:justify-start flex-wrap gap-1.5 w-full sm:w-auto">
+                        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 text-[11px] sm:text-xs font-mono font-bold border border-emerald-800">
+                          ✓ Graded (Next: {rev?.nextReviewDate})
+                        </span>
+                        {onResetEvaluation && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClickSound();
+                              onResetEvaluation(item.id);
+                            }}
+                            className="retro-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 border border-zinc-900 flex items-center space-x-1 cursor-pointer shadow-[1px_1px_0px_0px_#18181b]"
+                            title="Reset evaluation so this card is due today and can be re-evaluated"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Reset</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      /* 3-Button Recall Rating Grid on Mobile / Flex on Desktop */
+                      <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:space-x-1.5 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={(e) => handleRate(e, item.id, 'struggled')}
+                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer text-center"
+                          title="Mark struggled (review tomorrow)"
+                        >
+                          ❌ Hard
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRate(e, item.id, 'comfortable')}
+                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer text-center"
+                          title="Mark comfortable"
+                        >
+                          ✓ Good
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleRate(e, item.id, 'mastered')}
+                          className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer text-center"
+                          title="Mark mastered (longer spacing)"
+                        >
+                          ⭐ Easy
+                        </button>
+                      </div>
+                    )}
 
                     <div className="flex items-center justify-end space-x-1.5 pt-0.5 sm:pt-0">
                       <button
@@ -616,6 +705,7 @@ export function QueueList({
           {filteredList.map((item) => {
             const rev = reviews[item.id];
             const status = getItemStatus(rev);
+            const cardGradedToday = isGradedToday(rev);
             const isSelected = selectedItemId === item.id;
 
             return (
@@ -633,7 +723,11 @@ export function QueueList({
                   {/* Top metadata row: status + category + interval */}
                   <div className="flex items-center justify-between text-[11px] font-mono">
                     <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                      {status === 'OVERDUE' ? (
+                      {cardGradedToday ? (
+                        <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border border-emerald-900 text-[10px]">
+                          GRADED
+                        </span>
+                      ) : status === 'OVERDUE' ? (
                         <span className="px-1.5 py-0.2 rounded font-bold bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border border-rose-900">
                           LATE
                         </span>
@@ -679,6 +773,22 @@ export function QueueList({
                     </div>
 
                     <div className="flex items-center space-x-1.5">
+                      {cardGradedToday && onResetEvaluation && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playClickSound();
+                            onResetEvaluation(item.id);
+                          }}
+                          className="retro-btn px-2 py-1 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1"
+                          title="Reset evaluation so this card is due today"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Reset</span>
+                        </button>
+                      )}
+
                       {item.url && (
                         <a
                           href={item.url}
@@ -717,7 +827,11 @@ export function QueueList({
                   {/* Left: Status Dot/Badge + Title + Tags */}
                   <div className="flex items-center space-x-2.5 min-w-0 flex-1">
                     {/* Status indicator badge */}
-                    {status === 'OVERDUE' ? (
+                    {cardGradedToday ? (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border border-emerald-900 shrink-0">
+                        GRADED
+                      </span>
+                    ) : status === 'OVERDUE' ? (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border border-rose-900 shrink-0">
                         LATE
                       </span>
@@ -762,6 +876,22 @@ export function QueueList({
                       <span className="hidden md:inline-block text-[11px] text-zinc-500 dark:text-zinc-400">
                         • {rev.nextReviewDate}
                       </span>
+                    )}
+
+                    {cardGradedToday && onResetEvaluation && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playClickSound();
+                          onResetEvaluation(item.id);
+                        }}
+                        className="retro-btn px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1 shadow-[1px_1px_0px_0px_#18181b]"
+                        title="Reset evaluation so this card is due today"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Reset</span>
+                      </button>
                     )}
 
                     {item.url && (

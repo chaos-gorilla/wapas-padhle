@@ -98,3 +98,20 @@ export function getItemStatus(record?: ReviewRecord | null): ItemStatus {
   if (record.nextReviewDate === todayStr) return 'DUE_TODAY';
   return 'UPCOMING';
 }
+
+/**
+ * Returns true if the task was already graded today (evaluated during today's session)
+ */
+export function isGradedToday(record?: ReviewRecord | null): boolean {
+  if (!record || !record.lastReviewedAt) return false;
+  try {
+    const todayStr = getTodayDateString();
+    const reviewedDate = new Date(record.lastReviewedAt);
+    if (isNaN(reviewedDate.getTime())) return false;
+    const reviewedDateStr = formatDate(reviewedDate);
+    return reviewedDateStr === todayStr;
+  } catch {
+    return false;
+  }
+}
+

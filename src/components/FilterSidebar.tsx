@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ConceptItem, ReviewRecord } from '@/types';
-import { getItemStatus } from '@/lib/sm2';
+import { getItemStatus, isGradedToday } from '@/lib/sm2';
 import {
   Search,
   X,
@@ -17,10 +17,13 @@ import {
   ArrowUpDown,
   List,
   LayoutGrid,
+  CheckCircle2,
+  CalendarRange,
+  Flame,
 } from 'lucide-react';
 import { playClickSound } from '@/lib/sound';
 
-export type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
+export type TabType = 'due_overdue' | 'due' | 'backlog' | 'graded_today' | 'upcoming' | 'all';
 export type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
 export type ViewMode = 'detailed' | 'condensed';
 
@@ -41,6 +44,7 @@ interface FilterSidebarProps {
   hasActiveFilters: boolean;
   className?: string;
   onCloseMobileDrawer?: () => void;
+  onOpenRedistributeModal?: () => void;
 }
 
 export function FilterSidebar({
@@ -60,20 +64,44 @@ export function FilterSidebar({
   hasActiveFilters,
   className = '',
   onCloseMobileDrawer,
+  onOpenRedistributeModal,
 }: FilterSidebarProps) {
   // Counts by review status
+  const gradedTodayCount = React.useMemo(
+    () => items.filter((item) => isGradedToday(reviews[item.id])).length,
+    [items, reviews]
+  );
+
   const dueCount = React.useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'DUE_TODAY').length,
+    () =>
+      items.filter(
+        (item) =>
+          (getItemStatus(reviews[item.id]) === 'DUE_TODAY' ||
+            getItemStatus(reviews[item.id]) === 'NEW') &&
+          !isGradedToday(reviews[item.id])
+      ).length,
     [items, reviews]
   );
 
   const backlogCount = React.useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'OVERDUE').length,
+    () =>
+      items.filter(
+        (item) =>
+          getItemStatus(reviews[item.id]) === 'OVERDUE' &&
+          !isGradedToday(reviews[item.id])
+      ).length,
     [items, reviews]
   );
 
+  const dueOverdueCount = dueCount + backlogCount;
+
   const upcomingCount = React.useMemo(
-    () => items.filter((item) => getItemStatus(reviews[item.id]) === 'UPCOMING').length,
+    () =>
+      items.filter(
+        (item) =>
+          getItemStatus(reviews[item.id]) === 'UPCOMING' &&
+          !isGradedToday(reviews[item.id])
+      ).length,
     [items, reviews]
   );
 
@@ -177,26 +205,30 @@ export function FilterSidebar({
         {/* 2. Review Status Facet (E-Commerce style status grouping) */}
         <div className="space-y-1.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
           <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-            <span>Status</span>
+            <span>Review Queue</span>
             <span className="text-[10px] text-zinc-400">{items.length} cards</span>
           </label>
           <div className="space-y-1">
-            {/* All Cards */}
+            {/* Primary: Due & Overdue (Active Focus Queue) */}
             <button
               type="button"
-              onClick={() => handleStatusClick('all')}
+              onClick={() => handleStatusClick('due_overdue')}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-left cursor-pointer border ${
-                activeTab === 'all'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
+                activeTab === 'due_overdue'
+                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[2px_2px_0px_0px_#18181b]'
                   : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
             >
               <div className="flex items-center space-x-2">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>All Concepts</span>
+                <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
+                <span>Due &amp; Overdue</span>
               </div>
-              <span className="text-[11px] px-1.5 py-0.2 rounded bg-white/70 dark:bg-zinc-900/60 border border-zinc-900/30">
-                {items.length}
+              <span className={`text-[11px] px-1.5 py-0.2 rounded border ${
+                dueOverdueCount > 0
+                  ? 'bg-amber-100 dark:bg-amber-900/80 text-amber-950 dark:text-amber-200 border-amber-700 font-bold'
+                  : 'bg-white/70 dark:bg-zinc-900/60 border-zinc-900/30'
+              }`}>
+                {dueOverdueCount}
               </span>
             </button>
 
@@ -246,6 +278,46 @@ export function FilterSidebar({
               </span>
             </button>
 
+            {/* Quick Redistribute button if overdue exists */}
+            {backlogCount > 0 && onOpenRedistributeModal && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  onOpenRedistributeModal();
+                  if (onCloseMobileDrawer) onCloseMobileDrawer();
+                }}
+                className="w-full flex items-center justify-center space-x-1.5 px-2 py-1 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300 border border-dashed border-rose-700 text-[11px] font-mono font-bold hover:bg-rose-100 cursor-pointer"
+              >
+                <CalendarRange className="w-3 h-3 text-rose-600" />
+                <span>Re-distribute Across Days ➔</span>
+              </button>
+            )}
+
+            {/* Graded Today (Explicit menu selection for already reviewed cards) */}
+            <button
+              type="button"
+              onClick={() => handleStatusClick('graded_today')}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-left cursor-pointer border ${
+                activeTab === 'graded_today'
+                  ? 'bg-emerald-300 dark:bg-emerald-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
+                  : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+              title="Concepts evaluated today. Click to view or reset evaluation."
+            >
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Graded Today</span>
+              </div>
+              <span className={`text-[11px] px-1.5 py-0.2 rounded border ${
+                gradedTodayCount > 0
+                  ? 'bg-emerald-100 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-200 border-emerald-700 font-bold'
+                  : 'bg-white/70 dark:bg-zinc-900/60 border-zinc-900/30'
+              }`}>
+                {gradedTodayCount}
+              </span>
+            </button>
+
             {/* Upcoming */}
             <button
               type="button"
@@ -262,6 +334,25 @@ export function FilterSidebar({
               </div>
               <span className="text-[11px] px-1.5 py-0.2 rounded bg-white/70 dark:bg-zinc-900/60 border border-zinc-900/30">
                 {upcomingCount}
+              </span>
+            </button>
+
+            {/* All Cards */}
+            <button
+              type="button"
+              onClick={() => handleStatusClick('all')}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-left cursor-pointer border ${
+                activeTab === 'all'
+                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
+                  : 'bg-zinc-50 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+                <span>All Concepts</span>
+              </div>
+              <span className="text-[11px] px-1.5 py-0.2 rounded bg-white/70 dark:bg-zinc-900/60 border border-zinc-900/30">
+                {items.length}
               </span>
             </button>
           </div>

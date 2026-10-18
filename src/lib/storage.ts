@@ -1,6 +1,6 @@
 import type { ConceptItem, RecallConfidence, ReviewRecord, TelegramSettings } from '@/types';
 import { STARTER_ITEMS } from '@/data/concepts';
-import { calculateNextReview, formatDate } from './sm2';
+import { calculateNextReview, formatDate, getTodayDateString } from './sm2';
 
 const ITEMS_KEY = 'wapas_concepts_v2';
 const REVIEWS_KEY = 'wapas_reviews_v2';
@@ -243,17 +243,69 @@ export function recordReview(
   return record;
 }
 
-export function redistributeBacklog(): Record<string, ReviewRecord> {
+/**
+ * Resets a task's evaluation back to today so it can be re-evaluated.
+ * Sets nextReviewDate to today and clears lastReviewedAt.
+ */
+export function resetEvaluationToToday(itemId: string): Record<string, ReviewRecord> {
   const allReviews = loadReviews();
-  const todayStr = formatDate(new Date());
+  const current = allReviews[itemId];
+  const todayStr = getTodayDateString();
 
-  const overdue = Object.values(allReviews).filter(
-    (item) => item.nextReviewDate < todayStr
-  );
+  if (current) {
+    allReviews[itemId] = {
+      ...current,
+      nextReviewDate: todayStr,
+      lastReviewedAt: '',
+    };
+  } else {
+    allReviews[itemId] = {
+      itemId,
+      repetition: 0,
+      interval: 1,
+      easeFactor: 2.5,
+      lastReviewedAt: '',
+      nextReviewDate: todayStr,
+    };
+  }
 
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(REVIEWS_KEY, JSON.stringify(allReviews));
+  }
+
+  return allReviews;
+}
+
+export interface RedistributeOptions {
+  days: number;
+  target?: 'overdue' | 'due_and_overdue';
+  startTomorrow?: boolean;
+}
+
+/**
+ * Re-distributes overdue or due tasks across X days depending on the user's workload preference.
+ */
+export function redistributeTasks(options: RedistributeOptions): Record<string, ReviewRecord> {
+  const { days = 3, target = 'overdue', startTomorrow = false } = options;
+  const allReviews = loadReviews();
+  const todayStr = getTodayDateString();
   const today = new Date();
-  overdue.forEach((record, index) => {
-    const dayOffset = index % 3; // spread evenly over next 3 days
+
+  // Find target items
+  const recordsToRedistribute = Object.values(allReviews).filter((item) => {
+    if (target === 'overdue') {
+      return item.nextReviewDate < todayStr;
+    }
+    // 'due_and_overdue': both overdue and due today
+    return item.nextReviewDate <= todayStr;
+  });
+
+  // Sort oldest overdue first
+  recordsToRedistribute.sort((a, b) => (a.nextReviewDate || '').localeCompare(b.nextReviewDate || ''));
+
+  const safeDays = Math.max(1, days);
+  recordsToRedistribute.forEach((record, index) => {
+    const dayOffset = (index % safeDays) + (startTomorrow ? 1 : 0);
     const nextDate = new Date(today);
     nextDate.setDate(nextDate.getDate() + dayOffset);
     if (allReviews[record.itemId]) {
@@ -266,6 +318,10 @@ export function redistributeBacklog(): Record<string, ReviewRecord> {
   }
 
   return allReviews;
+}
+
+export function redistributeBacklog(): Record<string, ReviewRecord> {
+  return redistributeTasks({ days: 3, target: 'overdue', startTomorrow: false });
 }
 
 export function loadTelegramSettings(): TelegramSettings {

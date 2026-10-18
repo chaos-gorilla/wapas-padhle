@@ -10,10 +10,13 @@ import {
   loadTelegramSettings,
   recordReview,
   redistributeBacklog,
+  redistributeTasks,
+  resetEvaluationToToday,
   saveNewItem,
   saveTelegramSettings,
+  RedistributeOptions,
 } from '@/lib/storage';
-import { getItemStatus } from '@/lib/sm2';
+import { getItemStatus, isGradedToday } from '@/lib/sm2';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { QueueList, TabType } from '@/components/QueueList';
@@ -22,6 +25,7 @@ import { ActiveRecallModal } from '@/components/ActiveRecallModal';
 import { AddConceptModal } from '@/components/AddConceptModal';
 import { CsvImportModal } from '@/components/CsvImportModal';
 import { TelegramModal } from '@/components/TelegramModal';
+import { RedistributeModal } from '@/components/RedistributeModal';
 import { playClickSound } from '@/lib/sound';
 import {
   Sparkles,
@@ -36,6 +40,9 @@ import {
   Lightbulb,
   Plus,
   Play,
+  CalendarRange,
+  CheckCircle2,
+  Flame,
 } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
@@ -63,16 +70,24 @@ function getRecommendedItem(
     : currentItems;
   const pool = candidates.length > 0 ? candidates : currentItems;
 
-  const due = pool.filter((i) => getItemStatus(currentReviews[i.id]) === 'DUE_TODAY');
+  // Candidates must NOT have been graded today!
+  const eligible = pool.filter((i) => !isGradedToday(currentReviews[i.id]));
+  if (eligible.length === 0) return null;
+
+  const due = eligible.filter(
+    (i) =>
+      getItemStatus(currentReviews[i.id]) === 'DUE_TODAY' ||
+      getItemStatus(currentReviews[i.id]) === 'NEW'
+  );
   if (due.length > 0) return due[0];
 
-  const overdue = pool.filter((i) => getItemStatus(currentReviews[i.id]) === 'OVERDUE');
+  const overdue = eligible.filter((i) => getItemStatus(currentReviews[i.id]) === 'OVERDUE');
   if (overdue.length > 0) return overdue[0];
 
-  if (isRandom && pool.length > 1) {
-    return pool[Math.floor(Math.random() * pool.length)];
+  if (isRandom && eligible.length > 1) {
+    return eligible[Math.floor(Math.random() * eligible.length)];
   }
-  return pool[0];
+  return eligible[0];
 }
 
 export default function Home() {
@@ -92,8 +107,9 @@ export default function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
+  const [isRedistributeModalOpen, setIsRedistributeModalOpen] = useState(false);
   const [sessionReviewsCount, setSessionReviewsCount] = useState(0);
-  const [queueTab, setQueueTab] = useState<TabType>('due');
+  const [queueTab, setQueueTab] = useState<TabType>('due_overdue');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // E-Commerce style Filter & View States
@@ -116,12 +132,12 @@ export default function Home() {
     localStorage.setItem('wapas_view_mode', mode);
   };
 
-  const hasActiveFilters = Boolean(search || selectedCategory || queueTab !== 'all');
+  const hasActiveFilters = Boolean(search || selectedCategory || queueTab !== 'due_overdue');
 
   const handleResetFilters = () => {
     setSearch('');
     setSelectedCategory(null);
-    setQueueTab('all');
+    setQueueTab('due_overdue');
   };
 
   // Sync theme preference on mount
@@ -146,16 +162,31 @@ export default function Home() {
   };
 
   // Quick stats
+  const gradedTodayItems = useMemo(
+    () => items.filter((i) => isGradedToday(reviews[i.id])),
+    [items, reviews]
+  );
   const dueItems = useMemo(
-    () => items.filter((i) => getItemStatus(reviews[i.id]) === 'DUE_TODAY'),
+    () =>
+      items.filter(
+        (i) =>
+          (getItemStatus(reviews[i.id]) === 'DUE_TODAY' ||
+            getItemStatus(reviews[i.id]) === 'NEW') &&
+          !isGradedToday(reviews[i.id])
+      ),
     [items, reviews]
   );
   const overdueItems = useMemo(
-    () => items.filter((i) => getItemStatus(reviews[i.id]) === 'OVERDUE'),
+    () =>
+      items.filter(
+        (i) => getItemStatus(reviews[i.id]) === 'OVERDUE' && !isGradedToday(reviews[i.id])
+      ),
     [items, reviews]
   );
   const dueCount = dueItems.length;
   const backlogCount = overdueItems.length;
+  const dueOverdueCount = dueCount + backlogCount;
+  const gradedTodayCount = gradedTodayItems.length;
 
   // Open modal on card select
   const handleSelectItem = (item: ConceptItem) => {
@@ -169,6 +200,10 @@ export default function Home() {
     const recommended = getRecommendedItem(items, reviews);
     if (recommended) {
       setModalItem(recommended);
+      setIsStudyModalOpen(true);
+    } else if (items.length > 0) {
+      // If all due items are completed, open with null to celebrate or first item
+      setModalItem(null);
       setIsStudyModalOpen(true);
     }
   };
@@ -186,7 +221,7 @@ export default function Home() {
     setReviews(newReviews);
     setSessionReviewsCount((prev) => prev + 1);
 
-    // Pick next card recommendation
+    // Pick next card recommendation that hasn't been graded today
     const nextRecommended = getRecommendedItem(items, newReviews, modalItem.id);
     setModalItem(nextRecommended);
   };
@@ -216,6 +251,16 @@ export default function Home() {
     setSessionReviewsCount((prev) => prev + 1);
   };
 
+  // Explicitly reset an item's evaluation to today so it can be re-evaluated
+  const handleResetEvaluation = (itemId: string) => {
+    playClickSound();
+    const updated = resetEvaluationToToday(itemId);
+    setReviews({ ...updated });
+    if (modalItem?.id === itemId) {
+      setModalItem((prev) => (prev ? { ...prev } : null));
+    }
+  };
+
   const handleAddItem = (data: Omit<ConceptItem, 'id' | 'createdAt'>) => {
     const created = saveNewItem(data);
     const updated = [created, ...items];
@@ -240,6 +285,11 @@ export default function Home() {
 
   const handleRescheduleBacklog = () => {
     const updated = redistributeBacklog();
+    setReviews({ ...updated });
+  };
+
+  const handleRedistributeConfirm = (options: RedistributeOptions) => {
+    const updated = redistributeTasks(options);
     setReviews({ ...updated });
   };
 
@@ -275,38 +325,38 @@ export default function Home() {
         onOpenCsvModal={() => setIsCsvModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
         telegramSettings={telegramSettings}
-        dueCount={dueCount}
+        dueCount={dueOverdueCount}
       />
 
       {/* Main Content Workspace: E-Commerce Layout */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 relative z-10 min-w-0">
         {/* COMPACT MISSION STATUS & WORKSPACE CONTROLS BAR */}
         <section className="retro-box w-full min-w-0 bg-white dark:bg-zinc-900 rounded-xl p-3 sm:p-4 border-2 border-zinc-900 dark:border-zinc-700 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            {/* Left: Quick Date & Status Indicators */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            {/* Top on mobile / Left on desktop: Horizontal Scrollable Status Ribbon */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 sm:py-0 w-full sm:w-auto shrink min-w-0">
               {/* Date pill */}
               <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-mono text-xs font-bold border border-zinc-900 dark:border-zinc-700 shrink-0">
                 <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{todayFormattedShort}</span>
               </div>
 
-              {/* Due Today pill (Clicking filters queue to due cards!) */}
+              {/* Due & Overdue pill (Primary active queue) */}
               <button
                 type="button"
                 onClick={() => {
                   playClickSound();
-                  setQueueTab('due');
+                  setQueueTab('due_overdue');
                 }}
                 className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold border shrink-0 cursor-pointer ${
-                  dueCount > 0
-                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-emerald-900 hover:bg-emerald-200'
+                  dueOverdueCount > 0
+                    ? 'bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 border-amber-900 hover:bg-amber-200'
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-900 dark:border-zinc-700'
                 }`}
-                title="Filter queue to cards due today"
+                title="Filter queue to all due and overdue cards"
               >
-                <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>{dueCount > 0 ? `${dueCount} Due Today` : 'Queue Clear ✓'}</span>
+                <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>{dueOverdueCount > 0 ? `${dueOverdueCount} Due & Overdue` : 'Queue Clear ✓'}</span>
               </button>
 
               {/* Overdue Backlog pill */}
@@ -324,20 +374,48 @@ export default function Home() {
                 </button>
               )}
 
-              {/* Reviewed Counter */}
-              <div className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 font-mono text-xs font-bold border border-amber-900 shrink-0">
-                <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-                <span>{sessionReviewsCount} Reviewed</span>
-              </div>
+              {/* Re-distribute workload CTA button */}
+              {(backlogCount > 0 || dueOverdueCount > 0) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    setIsRedistributeModalOpen(true);
+                  }}
+                  className="retro-btn flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-xs font-bold border border-zinc-900 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors shrink-0 cursor-pointer shadow-[1.5px_1.5px_0px_0px_#18181b]"
+                  title="Spread tasks across X days"
+                >
+                  <CalendarRange className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                  <span>Re-distribute</span>
+                </button>
+              )}
+
+              {/* Graded Today Counter / Filter Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setQueueTab('graded_today');
+                }}
+                className={`flex items-center space-x-1 px-2 py-1 rounded-lg font-mono text-xs font-bold border shrink-0 cursor-pointer ${
+                  gradedTodayCount > 0
+                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-emerald-900 hover:bg-emerald-200'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-900 dark:border-zinc-700'
+                }`}
+                title="Filter queue to concepts graded today"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+                <span>{gradedTodayCount} Graded Today</span>
+              </button>
             </div>
 
-            {/* Right: Primary Study Action & Tools */}
-            <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+            {/* Bottom on mobile / Right on desktop: Primary Study Action & Tools */}
+            <div className="flex items-center justify-between sm:justify-end space-x-1.5 sm:space-x-2 shrink-0 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-dashed border-zinc-200 dark:border-zinc-800">
               {/* Start Recall Session CTA */}
               <button
                 type="button"
                 onClick={handleStartStudySession}
-                className="retro-btn inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-400 hover:bg-emerald-500 text-zinc-950 border border-zinc-900 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
+                className="retro-btn flex-1 sm:flex-initial inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 sm:py-1 rounded-lg text-xs font-mono font-bold bg-emerald-400 hover:bg-emerald-500 text-zinc-950 border border-zinc-900 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
                 title="Start active recall session in focused modal"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
@@ -351,11 +429,11 @@ export default function Home() {
                   playClickSound();
                   setIsGuideOpen((prev) => !prev);
                 }}
-                className="retro-btn flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-900 dark:border-zinc-700 hover:bg-zinc-200 cursor-pointer"
+                className="retro-btn flex items-center space-x-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-900 dark:border-zinc-700 hover:bg-zinc-200 cursor-pointer shrink-0"
                 title="Toggle 3-Step Active Recall Guide"
               >
                 <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden sm:inline">Guide</span>
+                <span>Guide</span>
                 {isGuideOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
 
@@ -363,38 +441,38 @@ export default function Home() {
               <Link
                 href="/analytics"
                 onClick={() => playClickSound()}
-                className="retro-btn inline-flex items-center space-x-1 px-2.5 sm:px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 dark:bg-amber-400 dark:text-zinc-950 cursor-pointer"
+                className="retro-btn inline-flex items-center space-x-1 px-2.5 py-1.5 sm:py-1 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 dark:bg-amber-400 dark:text-zinc-950 cursor-pointer shrink-0"
                 title="View full SM-2 analytics and deck breakdown"
               >
                 <BarChart3 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Analytics</span>
+                <span className="inline">Stats</span>
                 <ArrowRight className="w-3 h-3 ml-0.5" />
               </Link>
             </div>
           </div>
 
-          {/* Actionable Study Tip Banner (Never clipped or truncated) */}
+          {/* Actionable Study Tip Banner */}
           <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-1.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
             <div className="flex items-start sm:items-center space-x-1.5 flex-1 min-w-0">
               <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
               <span className="leading-snug break-words">
                 {backlogCount > 0 ? (
                   <>
-                    <strong className="text-zinc-900 dark:text-white">Tip:</strong> You have {backlogCount} overdue card{backlogCount !== 1 ? 's' : ''}. Don&apos;t stress about perfection—tackle them one by one!
+                    <strong className="text-zinc-900 dark:text-white">Tip:</strong> You have {backlogCount} overdue card{backlogCount !== 1 ? 's' : ''}. Use &quot;Re-distribute&quot; to spread them across multiple days without stress!
                   </>
-                ) : dueCount > 0 ? (
+                ) : dueOverdueCount > 0 ? (
                   <>
-                    <strong className="text-zinc-900 dark:text-white">Active Recall:</strong> Click any card below to open the recall station. Explain the invariant before revealing notes.
+                    <strong className="text-zinc-900 dark:text-white">Active Queue:</strong> Showing {dueOverdueCount} due &amp; overdue card{dueOverdueCount !== 1 ? 's' : ''}. Once graded, cards won&apos;t reappear until scheduled.
                   </>
                 ) : (
                   <>
-                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">All caught up!</strong> Daily spaced review strengthens neural pathways and prevents forgetting.
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">All caught up!</strong> No due or overdue tasks left for today. Graded concepts can be viewed from the menu.
                   </>
                 )}
               </span>
             </div>
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 hidden xl:inline shrink-0 pl-2">
-              [Click card to open modal • Space: flip • 1/2/3: rate]
+              [Click card to open modal • Space: flip • 1-4: rate]
             </span>
           </div>
 
@@ -425,10 +503,10 @@ export default function Home() {
                 <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-zinc-900 dark:border-zinc-700 rounded-lg">
                   <div className="font-mono font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5 mb-1">
                     <span className="px-1.5 py-0.2 rounded bg-emerald-200 dark:bg-emerald-900 border border-zinc-900 text-xs">03</span>
-                    <span>RATE RECALL (1 / 2 / 3)</span>
+                    <span>RATE RECALL (1-4)</span>
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-300 text-xs leading-snug">
-                    Rate 1 (Hard), 2 (Good), or 3 (Easy). SM-2 automatically calculates your optimal next test interval.
+                    Once graded for today, the card won&apos;t prompt you again unless explicitly reset from the menu.
                   </p>
                 </div>
               </div>
@@ -455,6 +533,7 @@ export default function Home() {
               onViewModeChange={handleViewModeChange}
               onResetFilters={handleResetFilters}
               hasActiveFilters={hasActiveFilters}
+              onOpenRedistributeModal={() => setIsRedistributeModalOpen(true)}
             />
           </div>
 
@@ -505,6 +584,8 @@ export default function Home() {
               onDeleteItem={handleDeleteItem}
               onRescheduleBacklog={handleRescheduleBacklog}
               onOpenMobileFilter={() => setIsMobileFilterDrawerOpen(true)}
+              onResetEvaluation={handleResetEvaluation}
+              onOpenRedistributeModal={() => setIsRedistributeModalOpen(true)}
             />
           </section>
         </div>
@@ -537,6 +618,7 @@ export default function Home() {
               onResetFilters={handleResetFilters}
               hasActiveFilters={hasActiveFilters}
               onCloseMobileDrawer={() => setIsMobileFilterDrawerOpen(false)}
+              onOpenRedistributeModal={() => setIsRedistributeModalOpen(true)}
             />
           </div>
         </div>
@@ -559,6 +641,16 @@ export default function Home() {
         onShuffle={handleModalShuffle}
         onClose={() => setIsStudyModalOpen(false)}
         onRate={handleModalRate}
+        onResetEvaluation={handleResetEvaluation}
+      />
+
+      {/* Redistribute Backlog Modal */}
+      <RedistributeModal
+        isOpen={isRedistributeModalOpen}
+        onClose={() => setIsRedistributeModalOpen(false)}
+        overdueCount={backlogCount}
+        dueTodayCount={dueCount}
+        onConfirm={handleRedistributeConfirm}
       />
 
       {/* Add Concept Modal */}

@@ -215,20 +215,15 @@ export function TodayCard({
                   playClickSound();
                   setShowNotes(true);
                 }}
-                className="retro-btn w-full p-3 sm:p-3.5 rounded-lg bg-amber-50/70 dark:bg-zinc-900/80 hover:bg-amber-100/80 dark:hover:bg-zinc-800 border-2 border-dashed border-amber-800/60 dark:border-zinc-700 flex items-center justify-between transition-colors group cursor-pointer text-left"
+                className="retro-btn w-full p-3 rounded-lg bg-amber-50/70 dark:bg-zinc-900/80 hover:bg-amber-100/80 dark:hover:bg-zinc-800 border-2 border-dashed border-amber-800/60 dark:border-zinc-700 flex items-center justify-between transition-colors group cursor-pointer text-left"
               >
                 <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded bg-amber-300 dark:bg-amber-400 border border-zinc-900 flex items-center justify-center shrink-0">
+                  <div className="w-6 h-6 rounded bg-amber-300 dark:bg-amber-400 border border-zinc-900 flex items-center justify-center shrink-0">
                     <BookOpen className="w-3.5 h-3.5 text-zinc-950" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                      Reveal Key Invariants &amp; Notes
-                    </div>
-                    <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-                      💡 Test your active recall first before checking notes
-                    </div>
-                  </div>
+                  <span className="text-xs sm:text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                    Reveal Key Invariants &amp; Notes
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1.5 shrink-0 ml-2">
                   <Eye className="w-4 h-4 text-zinc-700 dark:text-zinc-300 group-hover:scale-110 transition-transform" />
@@ -268,29 +263,29 @@ export function TodayCard({
           </div>
         ) : null}
 
-        {/* Detailed Spaced Repetition Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-xs">
-          <div className="retro-box-sm p-2 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-            <div className="flex items-center space-x-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400">
+        {/* Detailed Spaced Repetition Stats - Streamlined Single-Row Pills */}
+        <div className="grid grid-cols-3 gap-2 pt-0.5 font-mono text-xs">
+          <div className="retro-box-sm px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase flex items-center space-x-1">
               <Layers className="w-3 h-3 text-indigo-500" />
               <span>Streak</span>
-            </div>
-            <div className="font-bold text-xs mt-0.5">{currentReps} reviews</div>
+            </span>
+            <span className="font-bold text-xs">{currentReps}</span>
           </div>
 
-          <div className="retro-box-sm p-2 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-            <div className="flex items-center space-x-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400">
+          <div className="retro-box-sm px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase flex items-center space-x-1">
               <Sparkles className="w-3 h-3 text-amber-500" />
               <span>Interval</span>
-            </div>
-            <div className="font-bold text-xs mt-0.5">{currentInterval}d cadence</div>
+            </span>
+            <span className="font-bold text-xs">{currentInterval}d</span>
           </div>
 
-          <div className="retro-box-sm p-2 rounded bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200">
-            <div className="flex items-center space-x-1 text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400">
+          <div className="retro-box-sm px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-between">
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase">
               <span>Next</span>
-            </div>
-            <div className="font-bold text-xs mt-0.5 truncate">{reviewRecord?.nextReviewDate || 'Today'}</div>
+            </span>
+            <span className="font-bold text-xs truncate">{reviewRecord?.nextReviewDate || 'Today'}</span>
           </div>
         </div>
       </div>
