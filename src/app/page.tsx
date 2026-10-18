@@ -17,6 +17,7 @@ import { getItemStatus } from '@/lib/sm2';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { QueueList, TabType } from '@/components/QueueList';
+import { FilterSidebar, SortType, ViewMode } from '@/components/FilterSidebar';
 import { ActiveRecallModal } from '@/components/ActiveRecallModal';
 import { AddConceptModal } from '@/components/AddConceptModal';
 import { CsvImportModal } from '@/components/CsvImportModal';
@@ -94,6 +95,34 @@ export default function Home() {
   const [sessionReviewsCount, setSessionReviewsCount] = useState(0);
   const [queueTab, setQueueTab] = useState<TabType>('due');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  // E-Commerce style Filter & View States
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortType>('due_asc');
+  const [viewMode, setViewMode] = useState<ViewMode>('condensed');
+  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
+
+  // Sync viewMode preference with localStorage
+  useEffect(() => {
+    const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
+    if (savedMode === 'detailed' || savedMode === 'condensed') {
+      setViewMode(savedMode);
+    }
+  }, []);
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('wapas_view_mode', mode);
+  };
+
+  const hasActiveFilters = Boolean(search || selectedCategory || queueTab !== 'all');
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSelectedCategory(null);
+    setQueueTab('all');
+  };
 
   // Sync theme preference on mount
   useEffect(() => {
@@ -249,8 +278,8 @@ export default function Home() {
         dueCount={dueCount}
       />
 
-      {/* Main Content Workspace */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-5 relative z-10 min-w-0">
+      {/* Main Content Workspace: E-Commerce Layout */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5 relative z-10 min-w-0">
         {/* COMPACT MISSION STATUS & WORKSPACE CONTROLS BAR */}
         <section className="retro-box w-full min-w-0 bg-white dark:bg-zinc-900 rounded-xl p-3 sm:p-4 border-2 border-zinc-900 dark:border-zinc-700 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -344,11 +373,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Actionable Study Tip Banner */}
-          <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400">
-            <div className="flex items-center space-x-1.5 truncate">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="truncate">
+          {/* Actionable Study Tip Banner (Never clipped or truncated) */}
+          <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-1.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
+            <div className="flex items-start sm:items-center space-x-1.5 flex-1 min-w-0">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
+              <span className="leading-snug break-words">
                 {backlogCount > 0 ? (
                   <>
                     <strong className="text-zinc-900 dark:text-white">Tip:</strong> You have {backlogCount} overdue card{backlogCount !== 1 ? 's' : ''}. Don&apos;t stress about perfection—tackle them one by one!
@@ -359,12 +388,12 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <strong className="text-emerald-600 dark:text-emerald-400">All caught up!</strong> Daily spaced review strengthens neural pathways and prevents forgetting.
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">All caught up!</strong> Daily spaced review strengthens neural pathways and prevents forgetting.
                   </>
                 )}
               </span>
             </div>
-            <span className="text-[10px] text-zinc-400 hidden md:inline shrink-0 ml-2">
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 hidden xl:inline shrink-0 pl-2">
               [Click card to open modal • Space: flip • 1/2/3: rate]
             </span>
           </div>
@@ -407,47 +436,111 @@ export default function Home() {
           )}
         </section>
 
-        {/* FEED SECTION: CONCEPT QUEUE & CARDS (DETAILED OR CONDENSED) */}
-        <section className="space-y-3.5 w-full">
-          {/* Feed Title & Quick Add Bar */}
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-                Concept Queue &amp; Cards
-              </h2>
-              <span className="text-xs text-zinc-500 font-mono">
-                ({items.length} total)
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setIsAddModalOpen(true);
-              }}
-              className="retro-btn flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Card</span>
-            </button>
+        {/* 2-COLUMN E-COMMERCE WORKSPACE: SIDEBAR ON LEFT, CARDS FEED ON RIGHT */}
+        <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-6 w-full">
+          {/* DESKTOP FILTER SIDEBAR (Left column, sticky) */}
+          <div className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-20">
+            <FilterSidebar
+              items={items}
+              reviews={reviews}
+              search={search}
+              onSearchChange={setSearch}
+              activeTab={queueTab}
+              onTabChange={setQueueTab}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              onResetFilters={handleResetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
           </div>
 
-          {/* Revamped QueueList with Condensed and Detailed Views */}
-          <QueueList
-            items={items}
-            reviews={reviews}
-            selectedItemId={modalItem?.id}
-            activeTab={queueTab}
-            onTabChange={setQueueTab}
-            onSelectItem={handleSelectItem}
-            onRateItem={handleRateItem}
-            onDeleteItem={handleDeleteItem}
-            onRescheduleBacklog={handleRescheduleBacklog}
-          />
-        </section>
+          {/* MAIN CONTENT FEED (Right column) */}
+          <section className="flex-1 min-w-0 w-full space-y-3.5">
+            {/* Feed Title & Quick Add Bar */}
+            <div className="flex items-center justify-between pb-1">
+              <div className="flex items-center space-x-2">
+                <Layers className="w-4 h-4 text-emerald-500" />
+                <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+                  Concept Queue &amp; Cards
+                </h2>
+                <span className="text-xs text-zinc-500 font-mono">
+                  ({items.length} total)
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setIsAddModalOpen(true);
+                }}
+                className="retro-btn flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Card</span>
+              </button>
+            </div>
+
+            {/* QueueList (Responsive Mobile & Desktop) */}
+            <QueueList
+              items={items}
+              reviews={reviews}
+              selectedItemId={modalItem?.id}
+              activeTab={queueTab}
+              onTabChange={setQueueTab}
+              search={search}
+              onSearchChange={setSearch}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              onSelectItem={handleSelectItem}
+              onRateItem={handleRateItem}
+              onDeleteItem={handleDeleteItem}
+              onRescheduleBacklog={handleRescheduleBacklog}
+              onOpenMobileFilter={() => setIsMobileFilterDrawerOpen(true)}
+            />
+          </section>
+        </div>
       </main>
+
+      {/* MOBILE FILTER DRAWER OVERLAY */}
+      {isMobileFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileFilterDrawerOpen(false)}
+          />
+
+          {/* Slide-out Drawer */}
+          <div className="relative ml-auto w-full max-w-xs sm:max-w-sm h-full bg-[#fbfbfd] dark:bg-[#121214] p-4 shadow-2xl overflow-y-auto flex flex-col z-10 border-l-2 border-zinc-900 dark:border-zinc-700">
+            <FilterSidebar
+              items={items}
+              reviews={reviews}
+              search={search}
+              onSearchChange={setSearch}
+              activeTab={queueTab}
+              onTabChange={setQueueTab}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              onResetFilters={handleResetFilters}
+              hasActiveFilters={hasActiveFilters}
+              onCloseMobileDrawer={() => setIsMobileFilterDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <Footer />

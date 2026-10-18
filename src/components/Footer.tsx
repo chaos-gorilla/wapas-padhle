@@ -6,12 +6,12 @@ export function Footer() {
     <footer className="w-full border-t-2 border-zinc-900 dark:border-zinc-700 bg-[#fffefc] dark:bg-[#161619] mt-auto py-6 sm:py-8 transition-colors">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left text-xs font-mono text-zinc-600 dark:text-zinc-400 gap-3 sm:gap-4">
         <p className="break-words">
-          Built with HTML nostalgia by{' '}
+          Built with ❤️ and love, by{' '}
           <Link
             href="/author"
             className="retro-link font-bold text-zinc-900 dark:text-white inline-block"
           >
-            Abhishek Rai • Scale with Rai
+            Scale with Rai
           </Link>
           .
         </p>

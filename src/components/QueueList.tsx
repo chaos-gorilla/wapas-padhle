@@ -17,6 +17,9 @@ import {
   Clock,
   Sparkles,
   ArrowUpRight,
+  SlidersHorizontal,
+  X,
+  Tag,
 } from 'lucide-react';
 import { playClickSound, playMasteredChime } from '@/lib/sound';
 
@@ -30,10 +33,19 @@ interface QueueListProps {
   selectedItemId?: string | null;
   activeTab?: TabType;
   onTabChange?: (tab: TabType) => void;
+  search?: string;
+  onSearchChange?: (s: string) => void;
+  selectedCategory?: string | null;
+  onCategoryChange?: (c: string | null) => void;
+  sortBy?: SortType;
+  onSortChange?: (s: SortType) => void;
+  viewMode?: ViewMode;
+  onViewModeChange?: (m: ViewMode) => void;
   onSelectItem: (item: ConceptItem) => void;
   onRateItem: (itemId: string, confidence: RecallConfidence) => void;
   onDeleteItem: (itemId: string) => void;
   onRescheduleBacklog: () => void;
+  onOpenMobileFilter?: () => void;
 }
 
 export function QueueList({
@@ -42,11 +54,21 @@ export function QueueList({
   selectedItemId,
   activeTab: controlledTab,
   onTabChange,
+  search: controlledSearch,
+  onSearchChange,
+  selectedCategory: controlledCategory,
+  onCategoryChange,
+  sortBy: controlledSort,
+  onSortChange,
+  viewMode: controlledViewMode,
+  onViewModeChange,
   onSelectItem,
   onRateItem,
   onDeleteItem,
   onRescheduleBacklog,
+  onOpenMobileFilter,
 }: QueueListProps) {
+  // Tab state (controlled vs internal)
   const [internalTab, setInternalTab] = useState<TabType>('due');
   const activeTab = controlledTab !== undefined ? controlledTab : internalTab;
   const setActiveTab = (tab: TabType) => {
@@ -54,17 +76,47 @@ export function QueueList({
     setInternalTab(tab);
   };
 
-  const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<SortType>('due_asc');
-  const [viewMode, setViewMode] = useState<ViewMode>('condensed');
+  // Search state (controlled vs internal)
+  const [internalSearch, setInternalSearch] = useState('');
+  const search = controlledSearch !== undefined ? controlledSearch : internalSearch;
+  const setSearch = (s: string) => {
+    if (onSearchChange) onSearchChange(s);
+    setInternalSearch(s);
+  };
 
-  // Load view mode preference from localStorage
+  // Category state (controlled vs internal)
+  const [internalCategory, setInternalCategory] = useState<string | null>(null);
+  const selectedCategory = controlledCategory !== undefined ? controlledCategory : internalCategory;
+  const setSelectedCategory = (c: string | null) => {
+    if (onCategoryChange) onCategoryChange(c);
+    setInternalCategory(c);
+  };
+
+  // Sort state (controlled vs internal)
+  const [internalSort, setInternalSort] = useState<SortType>('due_asc');
+  const sortBy = controlledSort !== undefined ? controlledSort : internalSort;
+  const setSortBy = (s: SortType) => {
+    if (onSortChange) onSortChange(s);
+    setInternalSort(s);
+  };
+
+  // View mode state (controlled vs internal)
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>('condensed');
+  const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
+  const setViewMode = (m: ViewMode) => {
+    if (onViewModeChange) onViewModeChange(m);
+    setInternalViewMode(m);
+  };
+
+  // Load view mode preference from localStorage on mount if uncontrolled
   useEffect(() => {
-    const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
-    if (savedMode === 'detailed' || savedMode === 'condensed') {
-      setViewMode(savedMode);
+    if (controlledViewMode === undefined) {
+      const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
+      if (savedMode === 'detailed' || savedMode === 'condensed') {
+        setViewMode(savedMode);
+      }
     }
-  }, []);
+  }, [controlledViewMode]);
 
   const handleToggleViewMode = (mode: ViewMode) => {
     playClickSound();
@@ -87,6 +139,7 @@ export function QueueList({
     [items, reviews]
   );
 
+  // Filtered and sorted cards list
   const filteredList = useMemo(() => {
     let list: ConceptItem[] = [];
     if (activeTab === 'due') {
@@ -99,6 +152,12 @@ export function QueueList({
       list = items;
     }
 
+    // Category filter
+    if (selectedCategory) {
+      list = list.filter((item) => item.category === selectedCategory);
+    }
+
+    // Search query filter
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -129,7 +188,7 @@ export function QueueList({
       const dateB = revB?.nextReviewDate || '9999-99-99';
       return dateA.localeCompare(dateB);
     });
-  }, [items, reviews, activeTab, search, sortBy, dueItems, backlogItems, upcomingItems]);
+  }, [items, reviews, activeTab, selectedCategory, search, sortBy, dueItems, backlogItems, upcomingItems]);
 
   const handleCardClick = (item: ConceptItem) => {
     playClickSound();
@@ -152,139 +211,186 @@ export function QueueList({
     onDeleteItem(itemId);
   };
 
+  // Active filters count for mobile indicator
+  const activeFiltersCount = (selectedCategory ? 1 : 0) + (search ? 1 : 0) + (activeTab !== 'all' ? 1 : 0);
+
   return (
-    <div className="space-y-4 w-full">
-      {/* Top Filter and Controls Bar with Retro Box Styling */}
-      <div className="retro-box bg-white dark:bg-zinc-900 p-3.5 sm:p-4 rounded-xl space-y-3 w-full border-2 border-zinc-900 dark:border-zinc-700">
-        {/* Search bar + View Switcher row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          {/* Search Box */}
+    <div className="space-y-3.5 w-full">
+      {/* MOBILE FILTER HEADER (visible on screens < lg where desktop left sidebar is hidden) */}
+      <div className="block lg:hidden retro-box bg-white dark:bg-zinc-900 p-3 rounded-xl border-2 border-zinc-900 dark:border-zinc-700 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#27272a] space-y-2.5">
+        <div className="flex items-center gap-2">
+          {/* Search Box on Mobile */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search concepts, tags, invariant notes..."
-              className="w-full pl-10 pr-3.5 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs sm:text-sm text-zinc-900 dark:text-white placeholder-zinc-500 focus:outline-none focus:bg-yellow-50/50 dark:focus:bg-zinc-900 transition-colors"
+              placeholder="Search concepts, tags..."
+              className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-zinc-400"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* View Mode Switcher: Condensed (List) vs Detailed (Cards) */}
-          <div className="flex items-center space-x-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-zinc-900 dark:border-zinc-700 shrink-0 self-start sm:self-auto">
+          {/* Filter Drawer Trigger Button */}
+          {onOpenMobileFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                playClickSound();
+                onOpenMobileFilter();
+              }}
+              className="retro-btn flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-300 dark:bg-amber-400 text-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 shrink-0 cursor-pointer shadow-[1px_1px_0px_0px_#18181b]"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-zinc-950 text-amber-300 text-[10px] flex items-center justify-center font-bold">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Mobile View Switcher */}
+          <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-900 dark:border-zinc-700 shrink-0">
             <button
               type="button"
               onClick={() => handleToggleViewMode('condensed')}
-              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+              className={`p-1.5 rounded text-xs transition-all ${
                 viewMode === 'condensed'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-amber-300 text-zinc-950 font-bold border border-zinc-900'
+                  : 'text-zinc-600 dark:text-zinc-400'
               }`}
-              title="Condensed List View (Reddit Compact style)"
+              title="Condensed"
             >
               <List className="w-3.5 h-3.5" />
-              <span>Condensed</span>
             </button>
             <button
               type="button"
               onClick={() => handleToggleViewMode('detailed')}
-              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
+              className={`p-1.5 rounded text-xs transition-all ${
                 viewMode === 'detailed'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                  ? 'bg-amber-300 text-zinc-950 font-bold border border-zinc-900'
+                  : 'text-zinc-600 dark:text-zinc-400'
               }`}
-              title="Detailed Card View (Reddit Card style)"
+              title="Detailed"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Detailed</span>
             </button>
           </div>
         </div>
 
-        {/* Filter Pills / Tabs + Sorting Dropdown Row */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-1 border-t border-dashed border-zinc-200 dark:border-zinc-800">
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setActiveTab('due');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold border transition-all cursor-pointer ${
-                activeTab === 'due'
-                  ? 'bg-emerald-300 dark:bg-emerald-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-900/40 dark:border-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              ⏰ Due Today ({dueItems.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setActiveTab('backlog');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold border transition-all cursor-pointer ${
-                activeTab === 'backlog'
-                  ? 'bg-rose-300 dark:bg-rose-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-900/40 dark:border-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              🚨 Overdue ({backlogItems.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setActiveTab('upcoming');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold border transition-all cursor-pointer ${
-                activeTab === 'upcoming'
-                  ? 'bg-sky-300 dark:bg-sky-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-900/40 dark:border-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              ✓ Upcoming ({upcomingItems.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                setActiveTab('all');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold border transition-all cursor-pointer ${
-                activeTab === 'all'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-900/40 dark:border-zinc-700 hover:bg-zinc-200'
-              }`}
-            >
-              📚 All ({items.length})
-            </button>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="flex items-center space-x-2 shrink-0">
-            <span className="font-mono text-xs text-zinc-500 hidden sm:inline">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                playClickSound();
-                setSortBy(e.target.value as SortType);
-              }}
-              className="retro-btn px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-950 border-2 border-zinc-900 dark:border-zinc-700 font-mono text-xs font-bold text-zinc-900 dark:text-white focus:outline-none cursor-pointer"
-            >
-              <option value="due_asc">Due Date (Earliest)</option>
-              <option value="interval_desc">Interval (High to Low)</option>
-              <option value="title_asc">Title (A-Z)</option>
-              <option value="created_desc">Recently Added</option>
-            </select>
-          </div>
+        {/* Quick Horizontal Scrollable Status Chips on Mobile */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs font-mono font-bold">
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'all'
+                ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            All ({items.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('due')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'due'
+                ? 'bg-emerald-300 dark:bg-emerald-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            ⏰ Due ({dueItems.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('backlog')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'backlog'
+                ? 'bg-rose-300 dark:bg-rose-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            🚨 Overdue ({backlogItems.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('upcoming')}
+            className={`px-2 py-0.5 rounded-lg border whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === 'upcoming'
+                ? 'bg-sky-300 dark:bg-sky-400 text-zinc-950 border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-zinc-700'
+            }`}
+          >
+            Upcoming ({upcomingItems.length})
+          </button>
         </div>
       </div>
+
+      {/* ACTIVE FILTER TAG CHIPS (BREADCRUMBS) - Desktop & Mobile */}
+      {(selectedCategory || search || activeTab !== 'all') && (
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+          <span className="text-zinc-500 text-[11px]">Active:</span>
+
+          {activeTab !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-900/30 text-[11px] font-bold"
+            >
+              <span>Status: {activeTab.toUpperCase()}</span>
+              <X className="w-3 h-3 ml-0.5" />
+            </button>
+          )}
+
+          {selectedCategory && (
+            <button
+              type="button"
+              onClick={() => setSelectedCategory(null)}
+              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-100 border border-zinc-900/40 text-[11px] font-bold"
+            >
+              <Tag className="w-2.5 h-2.5" />
+              <span>{selectedCategory}</span>
+              <X className="w-3 h-3 ml-0.5" />
+            </button>
+          )}
+
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-900/30 text-[11px] font-bold"
+            >
+              <span>Search: &quot;{search}&quot;</span>
+              <X className="w-3 h-3 ml-0.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              playClickSound();
+              setActiveTab('all');
+              setSelectedCategory(null);
+              setSearch('');
+            }}
+            className="text-[11px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white underline cursor-pointer ml-1"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Backlog recovery alert */}
       {activeTab === 'backlog' && backlogItems.length > 0 && (
@@ -311,7 +417,7 @@ export function QueueList({
 
       {/* List / Feed Container */}
       {filteredList.length === 0 ? (
-        <div className="retro-box py-16 px-6 text-center rounded-xl bg-white dark:bg-zinc-900 w-full space-y-3 border-2 border-zinc-900 dark:border-zinc-700">
+        <div className="retro-box py-14 px-6 text-center rounded-xl bg-white dark:bg-zinc-900 w-full space-y-3 border-2 border-zinc-900 dark:border-zinc-700 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]">
           <Layers className="w-10 h-10 text-zinc-400 mx-auto" />
           <p className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">
             [No concepts matched your current filter]
@@ -322,17 +428,18 @@ export function QueueList({
               onClick={() => {
                 playClickSound();
                 setActiveTab('all');
+                setSelectedCategory(null);
                 setSearch('');
               }}
-              className="retro-btn px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer"
+              className="retro-btn px-4 py-2 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer border border-zinc-900 shadow-[1.5px_1.5px_0px_0px_#18181b]"
             >
-              View All Cards ({items.length}) ➔
+              Reset Filters &amp; View All ({items.length}) ➔
             </button>
           </div>
         </div>
       ) : viewMode === 'detailed' ? (
         /* ========================================================
-           DETAILED VIEW (REDDIT CARD MODE)
+           DETAILED VIEW (OPTIMIZED FOR BOTH MOBILE & DESKTOP)
            ======================================================== */
         <div className="space-y-3.5 w-full">
           {filteredList.map((item) => {
@@ -344,7 +451,7 @@ export function QueueList({
               <div
                 key={item.id}
                 onClick={() => handleCardClick(item)}
-                className={`retro-box w-full rounded-xl p-4 sm:p-5 text-left cursor-pointer transition-all border-2 ${
+                className={`retro-box w-full rounded-xl p-3.5 sm:p-5 text-left cursor-pointer transition-all border-2 ${
                   isSelected
                     ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-[4px_4px_0px_0px_#059669]'
                     : 'bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-700 hover:bg-amber-50/20 dark:hover:bg-zinc-800/50 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]'
@@ -352,7 +459,7 @@ export function QueueList({
               >
                 {/* Header: Category, Tags & Status Badges */}
                 <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2.5">
                     <div className="space-y-1.5 flex-1 min-w-0">
                       {/* Tags & Badges Row */}
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -365,7 +472,7 @@ export function QueueList({
                         {item.tags?.map((tag) => (
                           <span
                             key={tag}
-                            className="font-mono text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 border border-zinc-900 dark:border-zinc-700 flex items-center space-x-0.5 shrink-0"
+                            className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 border border-zinc-900 dark:border-zinc-700 flex items-center space-x-0.5 shrink-0"
                           >
                             <Hash className="w-2.5 h-2.5 text-zinc-700 dark:text-amber-400" />
                             <span>{tag}</span>
@@ -373,25 +480,25 @@ export function QueueList({
                         ))}
 
                         {status === 'OVERDUE' && (
-                          <span className="font-mono text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900 shrink-0">
+                          <span className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border-2 border-rose-900 shrink-0">
                             [OVERDUE]
                           </span>
                         )}
 
                         {status === 'DUE_TODAY' && (
-                          <span className="font-mono text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900 shrink-0">
+                          <span className="font-mono text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border-2 border-emerald-900 shrink-0">
                             [DUE TODAY]
                           </span>
                         )}
 
                         <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500 hidden sm:inline-flex items-center space-x-1 shrink-0 ml-auto">
                           <Eye className="w-3 h-3" />
-                          <span>Click card to open recall modal</span>
+                          <span>Click to open recall modal</span>
                         </span>
                       </div>
 
                       {/* Card Title */}
-                      <h3 className="text-base sm:text-lg md:text-xl font-bold text-zinc-900 dark:text-white line-clamp-2 pt-0.5 hover:text-blue-600 dark:hover:text-blue-400 break-words transition-colors">
+                      <h3 className="text-sm sm:text-lg md:text-xl font-bold text-zinc-900 dark:text-white leading-snug pt-0.5 hover:text-blue-600 dark:hover:text-blue-400 break-words transition-colors">
                         {item.title}
                       </h3>
                     </div>
@@ -403,8 +510,8 @@ export function QueueList({
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="retro-btn p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0 hover:bg-zinc-100"
-                        title="Open external documentation link"
+                        className="retro-btn p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0 hover:bg-zinc-100 border border-zinc-900/30"
+                        title="Open external documentation"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
@@ -413,21 +520,21 @@ export function QueueList({
 
                   {/* Notes snippet */}
                   {item.notes && (
-                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed pt-0.5 font-normal break-words font-mono bg-zinc-50/70 dark:bg-zinc-950/40 p-2.5 rounded border border-zinc-200 dark:border-zinc-800">
+                    <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed pt-0.5 font-normal break-words font-mono bg-zinc-50/70 dark:bg-zinc-950/40 p-2 sm:p-2.5 rounded border border-zinc-200 dark:border-zinc-800">
                       {item.notes}
                     </p>
                   )}
                 </div>
 
-                {/* Footer metadata & quick actions */}
-                <div className="pt-3 mt-3 border-t-2 border-zinc-900 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                {/* Footer metadata & quick actions (Stacked for mobile, row for desktop) */}
+                <div className="pt-2.5 sm:pt-3 mt-2.5 sm:mt-3 border-t-2 border-zinc-900 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-xs flex items-center space-x-1">
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-[11px] sm:text-xs flex items-center space-x-1">
                       <Sparkles className="w-3 h-3 text-amber-500" />
                       <span>{rev?.interval ? `${rev.interval}d interval` : 'New card'}</span>
                     </span>
                     {rev?.nextReviewDate && (
-                      <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-xs flex items-center space-x-1">
+                      <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-900 dark:border-zinc-700 text-[11px] sm:text-xs flex items-center space-x-1">
                         <Clock className="w-3 h-3 text-zinc-500" />
                         <span>Due: {rev.nextReviewDate}</span>
                       </span>
@@ -436,14 +543,15 @@ export function QueueList({
 
                   {/* Quick Action buttons */}
                   <div
-                    className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pt-0.5 sm:pt-0"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 pt-1 sm:pt-0"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center space-x-1 sm:space-x-1.5">
+                    {/* 3-Button Recall Rating Grid on Mobile / Flex on Desktop */}
+                    <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:space-x-1.5 w-full sm:w-auto">
                       <button
                         type="button"
                         onClick={(e) => handleRate(e, item.id, 'struggled')}
-                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer"
+                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 border-2 border-rose-900 cursor-pointer text-center"
                         title="Mark struggled (review tomorrow)"
                       >
                         ❌ Hard
@@ -451,7 +559,7 @@ export function QueueList({
                       <button
                         type="button"
                         onClick={(e) => handleRate(e, item.id, 'comfortable')}
-                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer"
+                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-2 border-zinc-900 dark:border-zinc-700 cursor-pointer text-center"
                         title="Mark comfortable"
                       >
                         ✓ Good
@@ -459,31 +567,33 @@ export function QueueList({
                       <button
                         type="button"
                         onClick={(e) => handleRate(e, item.id, 'mastered')}
-                        className="retro-btn px-2 sm:px-2.5 py-1 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer"
+                        className="retro-btn py-1.5 px-2 sm:px-2.5 rounded text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-950 dark:text-emerald-200 border-2 border-emerald-900 cursor-pointer text-center"
                         title="Mark mastered (longer spacing)"
                       >
                         ⭐ Easy
                       </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleCardClick(item)}
-                      className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1 ml-1"
-                      title="Open full Active Recall focus modal"
-                    >
-                      <span>Study</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center justify-end space-x-1.5 pt-0.5 sm:pt-0">
+                      <button
+                        type="button"
+                        onClick={() => handleCardClick(item)}
+                        className="retro-btn px-3 py-1.5 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center justify-center space-x-1 flex-1 sm:flex-initial shadow-[1.5px_1.5px_0px_0px_#18181b]"
+                        title="Open full Active Recall focus modal"
+                      >
+                        <span>Study</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleDelete(e, item.id)}
-                      className="retro-btn p-1.5 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 cursor-pointer ml-1"
-                      title="Delete card"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(e, item.id)}
+                        className="retro-btn p-1.5 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 border border-zinc-900/30 cursor-pointer"
+                        title="Delete card"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -492,7 +602,7 @@ export function QueueList({
         </div>
       ) : (
         /* ========================================================
-           CONDENSED VIEW (REDDIT COMPACT / DENSE LIST MODE)
+           CONDENSED VIEW (CUSTOM MOBILE OPTIMIZATION + REDDIT DESKTOP)
            ======================================================== */
         <div className="retro-box rounded-xl bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-700 divide-y-2 divide-zinc-200 dark:divide-zinc-800 overflow-hidden shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a] w-full">
           {filteredList.map((item) => {
@@ -504,93 +614,180 @@ export function QueueList({
               <div
                 key={item.id}
                 onClick={() => handleCardClick(item)}
-                className={`p-2.5 sm:p-3 text-left cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 ${
+                className={`p-3 sm:p-3 text-left cursor-pointer transition-colors ${
                   isSelected
                     ? 'bg-emerald-50 dark:bg-emerald-950/40'
                     : 'hover:bg-amber-50/30 dark:hover:bg-zinc-800/60'
                 }`}
               >
-                {/* Left: Status Dot/Badge + Title + Tags */}
-                <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-                  {/* Status indicator badge */}
-                  {status === 'OVERDUE' ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border border-rose-900 shrink-0">
-                      LATE
-                    </span>
-                  ) : status === 'DUE_TODAY' ? (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border border-emerald-900 shrink-0">
-                      DUE
-                    </span>
-                  ) : (
-                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0 ml-1" />
-                  )}
+                {/* 1. MOBILE OPTIMIZED LAYOUT (< sm screens) */}
+                <div className="flex flex-col sm:hidden space-y-2">
+                  {/* Top metadata row: status + category + interval */}
+                  <div className="flex items-center justify-between text-[11px] font-mono">
+                    <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                      {status === 'OVERDUE' ? (
+                        <span className="px-1.5 py-0.2 rounded font-bold bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border border-rose-900">
+                          LATE
+                        </span>
+                      ) : status === 'DUE_TODAY' ? (
+                        <span className="px-1.5 py-0.2 rounded font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border border-emerald-900">
+                          DUE
+                        </span>
+                      ) : (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      )}
 
-                  {/* Title & Category */}
-                  <div className="flex items-center space-x-2 min-w-0 flex-1">
-                    <span className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400">
+                      {item.category && (
+                        <span className="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950/60 text-zinc-900 dark:text-amber-200 font-bold border border-zinc-900 dark:border-zinc-700 text-[10px]">
+                          {item.category}
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+                      {rev?.interval ? `${rev.interval}d interval` : 'New card'}
+                    </span>
+                  </div>
+
+                  {/* Middle: Title & Notes preview */}
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-white leading-snug break-words">
                       {item.title}
-                    </span>
-
-                    {item.category && (
-                      <span className="hidden md:inline-block px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-mono font-semibold border border-zinc-300 dark:border-zinc-700 shrink-0">
-                        {item.category}
-                      </span>
-                    )}
-
+                    </h4>
                     {item.notes && (
-                      <span className="hidden lg:inline-block text-xs text-zinc-400 truncate max-w-[240px] font-mono">
-                        — {item.notes}
-                      </span>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 font-mono leading-relaxed bg-zinc-50 dark:bg-zinc-950/50 p-1.5 rounded border border-zinc-200 dark:border-zinc-800">
+                        {item.notes}
+                      </p>
                     )}
+                  </div>
+
+                  {/* Bottom Action Row */}
+                  <div
+                    className="flex items-center justify-between pt-1 border-t border-dashed border-zinc-200 dark:border-zinc-800"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                      {rev?.nextReviewDate ? `Due: ${rev.nextReviewDate}` : 'Unscheduled'}
+                    </div>
+
+                    <div className="flex items-center space-x-1.5">
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-blue-600"
+                          title="Source documentation"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleCardClick(item)}
+                        className="retro-btn px-2.5 py-1 rounded text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1 shadow-[1px_1px_0px_0px_#18181b]"
+                      >
+                        <span>Recall</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(e, item.id)}
+                        className="p-1 rounded text-zinc-400 hover:text-rose-600 cursor-pointer"
+                        title="Delete card"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right: Spacing + Next Date + Actions */}
-                <div
-                  className="flex items-center justify-between sm:justify-end space-x-2 shrink-0 font-mono text-xs pt-1 sm:pt-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {rev?.interval ? `${rev.interval}d` : 'new'}
-                  </span>
+                {/* 2. DESKTOP OPTIMIZED LAYOUT (>= sm screens, high-density row) */}
+                <div className="hidden sm:flex sm:items-center justify-between gap-3">
+                  {/* Left: Status Dot/Badge + Title + Tags */}
+                  <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                    {/* Status indicator badge */}
+                    {status === 'OVERDUE' ? (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-200 dark:bg-rose-900 text-rose-950 dark:text-rose-100 border border-rose-900 shrink-0">
+                        LATE
+                      </span>
+                    ) : status === 'DUE_TODAY' ? (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-950 dark:text-emerald-100 border border-emerald-900 shrink-0">
+                        DUE
+                      </span>
+                    ) : (
+                      <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0 ml-1" />
+                    )}
 
-                  {rev?.nextReviewDate && (
-                    <span className="hidden sm:inline-block text-[11px] text-zinc-500 dark:text-zinc-400">
-                      • {rev.nextReviewDate}
+                    {/* Title & Category */}
+                    <div className="flex items-center space-x-2 min-w-0 flex-1">
+                      <span className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400">
+                        {item.title}
+                      </span>
+
+                      {item.category && (
+                        <span className="px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-mono font-semibold border border-zinc-300 dark:border-zinc-700 shrink-0">
+                          {item.category}
+                        </span>
+                      )}
+
+                      {item.notes && (
+                        <span className="hidden xl:inline-block text-xs text-zinc-400 truncate max-w-[240px] font-mono">
+                          — {item.notes}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Spacing + Next Date + Actions */}
+                  <div
+                    className="flex items-center justify-end space-x-2 shrink-0 font-mono text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {rev?.interval ? `${rev.interval}d` : 'new'}
                     </span>
-                  )}
 
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1 rounded text-zinc-500 hover:text-blue-600 shrink-0"
-                      title="External link"
+                    {rev?.nextReviewDate && (
+                      <span className="hidden md:inline-block text-[11px] text-zinc-500 dark:text-zinc-400">
+                        • {rev.nextReviewDate}
+                      </span>
+                    )}
+
+                    {item.url && (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 rounded text-zinc-500 hover:text-blue-600 shrink-0"
+                        title="External link"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+
+                    {/* Study Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleCardClick(item)}
+                      className="retro-btn px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1 shadow-[1px_1px_0px_0px_#18181b]"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+                      <span>Recall</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </button>
 
-                  {/* Study Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleCardClick(item)}
-                    className="retro-btn px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer flex items-center space-x-1"
-                  >
-                    <span>Recall</span>
-                    <ArrowUpRight className="w-3 h-3" />
-                  </button>
-
-                  {/* Delete Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleDelete(e, item.id)}
-                    className="p-1 rounded text-zinc-400 hover:text-rose-600 cursor-pointer"
-                    title="Delete card"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    {/* Delete Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, item.id)}
+                      className="p-1 rounded text-zinc-400 hover:text-rose-600 cursor-pointer"
+                      title="Delete card"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

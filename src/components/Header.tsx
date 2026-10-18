@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Sun,
@@ -83,12 +84,19 @@ export function Header({
               playClickSound();
               setIsMobileMenuOpen(false);
             }}
-            className="font-extrabold text-base sm:text-xl tracking-tight text-zinc-900 dark:text-white flex items-center space-x-1.5 sm:space-x-2 min-w-0"
+            className="font-extrabold text-base sm:text-xl tracking-tight text-zinc-900 dark:text-white flex items-center space-x-2 sm:space-x-2.5 min-w-0 group"
           >
-            <span className="font-mono text-xs sm:text-sm px-1.5 py-0.5 rounded bg-amber-300 dark:bg-amber-400 text-zinc-950 font-bold border border-zinc-900 shrink-0">
-              ⚡ WP
-            </span>
-            <span className="truncate text-sm sm:text-lg">Wapas Padhle</span>
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg border-2 border-zinc-900 dark:border-zinc-700 bg-amber-300 dark:bg-amber-400 overflow-hidden shrink-0 shadow-[1.5px_1.5px_0px_0px_#18181b] dark:shadow-[1.5px_1.5px_0px_0px_#27272a] group-hover:scale-105 transition-transform flex items-center justify-center">
+              <Image
+                src="/logo.png"
+                alt="Wapas Padhle"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+            <span className="truncate text-base sm:text-lg">Wapas Padhle</span>
           </Link>
 
           {/* Desktop Navigation Tabs (Hidden on mobile) */}
@@ -561,7 +569,7 @@ export function Header({
 
             {/* Retro Signature Footer */}
             <div className="pt-1 text-center font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-              ⚡ WP • Spaced Repetition Engine • Abhishek Rai
+              Wapas Padhle • Spaced Repetition Engine • Scale with Rai
             </div>
           </div>
         </>
