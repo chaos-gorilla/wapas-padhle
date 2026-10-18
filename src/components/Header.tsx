@@ -5,13 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
-  Sun,
-  Moon,
   Plus,
   Send,
   User,
-  Volume2,
-  VolumeX,
+  Settings,
   Sparkles,
   BarChart3,
   Layers,
@@ -21,7 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { TelegramSettings } from '@/types';
-import { isSoundEnabled, setSoundEnabled, playClickSound } from '@/lib/sound';
+import { playClickSound } from '@/lib/sound';
 
 interface HeaderProps {
   isDark: boolean;
@@ -29,6 +26,7 @@ interface HeaderProps {
   onOpenAddModal?: () => void;
   onOpenCsvModal?: () => void;
   onOpenTelegramModal?: () => void;
+  onOpenSettings?: () => void;
   telegramSettings?: TelegramSettings;
   dueCount?: number;
 }
@@ -39,11 +37,11 @@ export function Header({
   onOpenAddModal,
   onOpenCsvModal,
   onOpenTelegramModal,
+  onOpenSettings,
   telegramSettings,
   dueCount,
 }: HeaderProps) {
   const pathname = usePathname();
-  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [prevPathname, setPrevPathname] = useState(pathname);
@@ -62,13 +60,6 @@ export function Header({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  const toggleSound = () => {
-    const next = !soundOn;
-    setSoundOn(next);
-    setSoundEnabled(next);
-    if (next) playClickSound();
-  };
 
   const isConnected =
     Boolean(telegramSettings?.connected) && Boolean(telegramSettings?.chatId);
@@ -204,20 +195,6 @@ export function Header({
             </button>
           )}
 
-          {/* Sound click toggle */}
-          <button
-            onClick={toggleSound}
-            title={soundOn ? 'Click sounds enabled' : 'Click sounds muted'}
-            aria-label="Toggle click sound"
-            className="retro-btn p-1.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shrink-0"
-          >
-            {soundOn ? (
-              <Volume2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
-            )}
-          </button>
-
           {/* Author Page Link */}
           <Link
             href="/author"
@@ -232,21 +209,20 @@ export function Header({
             <User className="w-3.5 h-3.5" />
           </Link>
 
-          {/* Theme Toggle (Light / Dark) */}
-          <button
-            onClick={() => {
-              playClickSound();
-              onToggleTheme();
-            }}
-            aria-label="Toggle theme"
-            className="retro-btn p-1.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shrink-0"
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-            ) : (
-              <Moon className="w-3.5 h-3.5" />
-            )}
-          </button>
+          {/* Settings Gear */}
+          {onOpenSettings && (
+            <button
+              onClick={() => {
+                playClickSound();
+                onOpenSettings();
+              }}
+              aria-label="Open settings"
+              title="Preferences: theme, layout & sound"
+              className="retro-btn p-1.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shrink-0"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Mobile Header Controls (Visible only on < md) */}
@@ -266,21 +242,20 @@ export function Header({
             </button>
           )}
 
-          {/* Quick Theme Toggle on Mobile */}
-          <button
-            onClick={() => {
-              playClickSound();
-              onToggleTheme();
-            }}
-            aria-label="Toggle theme"
-            className="retro-btn p-1.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shrink-0"
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-            ) : (
-              <Moon className="w-3.5 h-3.5" />
-            )}
-          </button>
+          {/* Settings Gear on Mobile */}
+          {onOpenSettings && (
+            <button
+              onClick={() => {
+                playClickSound();
+                onOpenSettings();
+              }}
+              aria-label="Open settings"
+              title="Preferences"
+              className="retro-btn p-1.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shrink-0"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          )}
 
           {/* Mobile Hamburger / Close Menu Button */}
           <button
@@ -519,53 +494,27 @@ export function Header({
               </div>
             )}
 
-            {/* Quick Settings & Toggles Row */}
-            <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="text-[11px] font-mono font-bold tracking-wider uppercase text-zinc-500 dark:text-zinc-400 px-1 mb-2">
-                Preferences
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {/* Sound Click Toggle */}
-                <button
-                  onClick={toggleSound}
-                  className="retro-btn flex items-center justify-center space-x-2 py-2 px-3 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-xs font-bold cursor-pointer"
-                >
-                  {soundOn ? (
-                    <>
-                      <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Sound: ON</span>
-                    </>
-                  ) : (
-                    <>
-                      <VolumeX className="w-4 h-4 text-zinc-400" />
-                      <span>Sound: OFF</span>
-                    </>
-                  )}
-                </button>
-
-                {/* Theme Toggle */}
+            {/* Settings shortcut row */}
+            {onOpenSettings && (
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
                 <button
                   onClick={() => {
                     playClickSound();
-                    onToggleTheme();
+                    setIsMobileMenuOpen(false);
+                    onOpenSettings();
                   }}
-                  className="retro-btn flex items-center justify-center space-x-2 py-2 px-3 rounded-lg bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-mono text-xs font-bold cursor-pointer"
+                  className="retro-btn w-full flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-xs sm:text-sm cursor-pointer"
                 >
-                  {isDark ? (
-                    <>
-                      <Sun className="w-4 h-4 text-amber-400" />
-                      <span>Mode: Dark</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="w-4 h-4" />
-                      <span>Mode: Light</span>
-                    </>
-                  )}
+                  <div className="flex items-center space-x-2.5">
+                    <Settings className="w-4 h-4 text-amber-500" />
+                    <span>Preferences</span>
+                  </div>
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 border border-zinc-900">
+                    SETTINGS
+                  </span>
                 </button>
               </div>
-            </div>
+            )}
 
             {/* Retro Signature Footer */}
             <div className="pt-1 text-center font-mono text-[10px] text-zinc-500 dark:text-zinc-400">

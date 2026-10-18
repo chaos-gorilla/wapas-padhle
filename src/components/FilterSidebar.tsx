@@ -15,8 +15,6 @@ import {
   Sparkles,
   BookOpen,
   ArrowUpDown,
-  List,
-  LayoutGrid,
   CheckCircle2,
   CalendarRange,
   Flame,
@@ -38,8 +36,6 @@ interface FilterSidebarProps {
   onCategoryChange: (category: string | null) => void;
   sortBy: SortType;
   onSortChange: (sort: SortType) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   onResetFilters: () => void;
   hasActiveFilters: boolean;
   className?: string;
@@ -58,8 +54,6 @@ export function FilterSidebar({
   onCategoryChange,
   sortBy,
   onSortChange,
-  viewMode,
-  onViewModeChange,
   onResetFilters,
   hasActiveFilters,
   className = '',
@@ -437,48 +431,7 @@ export function FilterSidebar({
           </select>
         </div>
 
-        {/* 5. View Mode Switcher */}
-        <div className="space-y-1.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800">
-          <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Card Layout View
-          </label>
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-zinc-900 dark:border-zinc-700">
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                onViewModeChange('condensed');
-              }}
-              className={`flex items-center justify-center space-x-1.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
-                viewMode === 'condensed'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-              title="Compact list view"
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>Condensed</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                playClickSound();
-                onViewModeChange('detailed');
-              }}
-              className={`flex items-center justify-center space-x-1.5 py-1 rounded text-xs font-mono font-bold transition-all cursor-pointer ${
-                viewMode === 'detailed'
-                  ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-              title="Detailed card view"
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Detailed</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 6. Spaced Repetition Mini Tip Widget */}
+        {/* 5. Spaced Repetition Mini Tip Widget */}
         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-zinc-900 dark:border-zinc-700 space-y-1">
           <div className="flex items-center space-x-1.5 text-xs font-mono font-bold text-amber-900 dark:text-amber-300">
             <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />

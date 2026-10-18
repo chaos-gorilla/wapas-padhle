@@ -26,7 +26,8 @@ import { AddConceptModal } from '@/components/AddConceptModal';
 import { CsvImportModal } from '@/components/CsvImportModal';
 import { TelegramModal } from '@/components/TelegramModal';
 import { RedistributeModal } from '@/components/RedistributeModal';
-import { playClickSound } from '@/lib/sound';
+import { SettingsModal } from '@/components/SettingsModal';
+import { isSoundEnabled, setSoundEnabled, playClickSound } from '@/lib/sound';
 import {
   Sparkles,
   Layers,
@@ -108,6 +109,8 @@ export default function Home() {
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [isRedistributeModalOpen, setIsRedistributeModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [sessionReviewsCount, setSessionReviewsCount] = useState(0);
   const [queueTab, setQueueTab] = useState<TabType>('due_overdue');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -159,6 +162,13 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('wapas_theme', 'light');
     }
+  };
+
+  const handleToggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+    if (next) playClickSound();
   };
 
   // Quick stats
@@ -324,6 +334,7 @@ export default function Home() {
         onOpenAddModal={() => setIsAddModalOpen(true)}
         onOpenCsvModal={() => setIsCsvModalOpen(true)}
         onOpenTelegramModal={() => setIsTelegramModalOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
         telegramSettings={telegramSettings}
         dueCount={dueOverdueCount}
       />
@@ -529,8 +540,6 @@ export default function Home() {
               onCategoryChange={setSelectedCategory}
               sortBy={sortBy}
               onSortChange={setSortBy}
-              viewMode={viewMode}
-              onViewModeChange={handleViewModeChange}
               onResetFilters={handleResetFilters}
               hasActiveFilters={hasActiveFilters}
               onOpenRedistributeModal={() => setIsRedistributeModalOpen(true)}
@@ -613,8 +622,6 @@ export default function Home() {
               onCategoryChange={setSelectedCategory}
               sortBy={sortBy}
               onSortChange={setSortBy}
-              viewMode={viewMode}
-              onViewModeChange={handleViewModeChange}
               onResetFilters={handleResetFilters}
               hasActiveFilters={hasActiveFilters}
               onCloseMobileDrawer={() => setIsMobileFilterDrawerOpen(false)}
@@ -674,6 +681,18 @@ export default function Home() {
         isOpen={isTelegramModalOpen}
         onClose={() => setIsTelegramModalOpen(false)}
         onSaveSettings={handleSaveTelegram}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        soundOn={soundOn}
+        onToggleSound={handleToggleSound}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
       />
     </div>
   );
