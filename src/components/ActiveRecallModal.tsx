@@ -194,24 +194,17 @@ export function ActiveRecallModal({
     [onRate]
   );
 
-  // Handle clicking a station on the slider
-  const handleStepClick = useCallback(
-    (stepNum: number) => {
-      const stepItem = SLIDER_STEPS.find((s) => s.step === stepNum) || SLIDER_STEPS[1];
-      if (selectedStep === stepNum) {
-        // If clicking already selected step, commit immediately
-        if (stepItem.key === 'mastered') {
-          playMasteredChime();
-        } else {
-          playClickSound();
-        }
-        commitRating(stepItem.key);
+  // Rate directly and trigger transition animation
+  const handleRate = useCallback(
+    (confidence: RecallConfidence) => {
+      if (confidence === 'mastered') {
+        playMasteredChime();
       } else {
         playClickSound();
-        setSelectedStep(stepNum);
       }
+      commitRating(confidence);
     },
-    [selectedStep, commitRating]
+    [commitRating]
   );
 
   // Keyboard Shortcuts inside Modal
@@ -241,29 +234,20 @@ export function ActiveRecallModal({
         onResetEvaluation(item.id);
       } else if ((e.key === '1' || e.key === 'e' || e.key === 'E') && !isTaskGradedToday) {
         e.preventDefault();
-        playClickSound();
-        setSelectedStep(1);
+        handleRate('mastered');
       } else if ((e.key === '2' || e.key === 'm' || e.key === 'M') && !isTaskGradedToday) {
         e.preventDefault();
-        playClickSound();
-        setSelectedStep(2);
+        handleRate('comfortable');
       } else if ((e.key === '3' || e.key === 'h' || e.key === 'H') && !isTaskGradedToday) {
         e.preventDefault();
-        playClickSound();
-        setSelectedStep(3);
+        handleRate('struggled');
       } else if ((e.key === '4' || e.key === 'b' || e.key === 'B') && !isTaskGradedToday) {
         e.preventDefault();
-        playClickSound();
-        setSelectedStep(4);
+        handleRate('forgot');
       } else if (e.key === 'Enter' && !isTaskGradedToday) {
         e.preventDefault();
         const activeStep = SLIDER_STEPS.find((s) => s.step === selectedStep) || SLIDER_STEPS[1];
-        if (activeStep.key === 'mastered') {
-          playMasteredChime();
-        } else {
-          playClickSound();
-        }
-        commitRating(activeStep.key);
+        handleRate(activeStep.key);
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         if (onShuffle) {
@@ -295,7 +279,7 @@ export function ActiveRecallModal({
     hasPrev,
     hasNext,
     onClose,
-    commitRating,
+    handleRate,
   ]);
 
   if (!isOpen) return null;
@@ -691,7 +675,7 @@ export function ActiveRecallModal({
                       </div>
                     </div>
 
-                    {/* 4 Station Buttons along the spectrum (Sideways, perfectly contained) */}
+                    {/* 4 Station Buttons along the spectrum (Sideways, perfectly contained, 1-click to grade) */}
                     <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                       {SLIDER_STEPS.map((stepItem) => {
                         const isSelected = selectedStep === stepItem.step;
@@ -699,17 +683,19 @@ export function ActiveRecallModal({
                           <button
                             key={stepItem.step}
                             type="button"
-                            onClick={() => handleStepClick(stepItem.step)}
+                            onClick={() => handleRate(stepItem.key)}
+                            onMouseEnter={() => setSelectedStep(stepItem.step)}
+                            onFocus={() => setSelectedStep(stepItem.step)}
                             className={`retro-btn px-1.5 sm:px-2.5 py-2 sm:py-2.5 rounded-lg border-2 text-center cursor-pointer flex flex-col items-center justify-center min-h-[52px] sm:min-h-[58px] relative transition-all min-w-0 overflow-hidden ${
                               isSelected
                                 ? stepItem.colorScheme.activeBtn
                                 : 'bg-zinc-50 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700'
                             }`}
-                            title={`${stepItem.label}: ${stepItem.headline} [Shortcut: ${stepItem.shortcut} or click again to confirm]`}
+                            title={`Rate topic as ${stepItem.label} [Shortcut: ${stepItem.shortcut}]`}
                           >
                             <div className="flex items-center justify-center space-x-1 sm:space-x-1.5 min-w-0 w-full px-0.5">
-                              <span className="text-sm sm:text-base shrink-0 leading-none">{stepItem.emoji}</span>
-                              <span className="font-mono font-black text-[11px] sm:text-xs truncate">{stepItem.label}</span>
+                              <span className="text-base sm:text-lg shrink-0 leading-none">{stepItem.emoji}</span>
+                              <span className="font-mono font-black text-xs sm:text-sm truncate">{stepItem.label}</span>
                               <kbd className="hidden sm:inline-block font-mono text-[9px] px-1 py-0.2 rounded bg-white/80 dark:bg-zinc-900/80 border border-zinc-400 shrink-0">
                                 {stepItem.shortcut}
                               </kbd>
@@ -791,60 +777,41 @@ export function ActiveRecallModal({
           )}
         </div>
 
-        {/* Sticky Footer: Confirm Grade (left) + Shortcuts (center) + Close (right) */}
-        <div className="border-t-2 border-zinc-900 dark:border-zinc-700 p-2 sm:p-3 bg-zinc-100 dark:bg-zinc-900/80 rounded-b-xl flex items-center justify-between gap-2 shrink-0">
-          {/* Left: Confirm Grade button (only when not yet graded) */}
-          {item && !isTaskGradedToday ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (activeStepItem.key === 'mastered') {
-                  playMasteredChime();
-                } else {
-                  playClickSound();
-                }
-                commitRating(activeStepItem.key);
-              }}
-              className={`retro-btn flex-1 sm:flex-initial py-1.5 sm:py-2 px-3 sm:px-5 rounded-lg font-mono font-black text-xs sm:text-sm border-2 border-zinc-950 flex items-center justify-center space-x-2 cursor-pointer shadow-[2px_2px_0px_0px_#18181b] transition-all ${activeStepItem.colorScheme.confirmBtn}`}
-              title={`Confirm ${activeStepItem.label} grade and advance [Shortcut: Enter]`}
-            >
-              <span>{activeStepItem.emoji} Confirm: {activeStepItem.label}</span>
-              <kbd className="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/90 dark:bg-zinc-900/90 border border-zinc-950 text-zinc-950 dark:text-zinc-50">
-                Enter ↵
-              </kbd>
-            </button>
-          ) : (
-            /* Shortcuts legend on desktop when graded */
-            <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
-              <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Space</kbd> Notes</span>
-              {isTaskGradedToday && (
-                <><span>•</span><span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">R</kbd> Reset</span></>
-              )}
-              <span>•</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
-              <span>•</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
-            </div>
-          )}
+        {/* Modal Footer with Keyboard Shortcuts Legend & Clean Close Button */}
+        <div className="border-t-2 border-zinc-900 dark:border-zinc-700 p-2 sm:p-3 bg-zinc-100 dark:bg-zinc-900/80 rounded-b-xl flex items-center justify-between text-[11px] font-mono text-zinc-600 dark:text-zinc-400 shrink-0 gap-2">
+          {/* Shortcuts Legend */}
+          <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
+            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Space</kbd> Notes</span>
+            <span>•</span>
+            {isTaskGradedToday ? (
+              <>
+                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">R</kbd> Reset</span>
+                <span>•</span>
+              </>
+            ) : (
+              <>
+                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">1-4</kbd> Feel</span>
+                <span>•</span>
+                <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Enter</kbd> Moderate</span>
+                <span>•</span>
+              </>
+            )}
+            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
+            <span>•</span>
+            <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
+          </div>
 
-          {/* Center: Shortcuts legend (only when not graded, desktop) */}
-          {item && !isTaskGradedToday && (
-            <div className="hidden sm:flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
-              <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">1-4</kbd> Slider</span>
-              <span>•</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">S</kbd> Shuffle</span>
-              <span>•</span>
-              <span><kbd className="px-1 py-0.2 rounded bg-white dark:bg-zinc-800 border">Esc</kbd> Close</span>
-            </div>
-          )}
+          {/* Mobile tip */}
+          <div className="flex sm:hidden items-center space-x-1 text-[11px] font-mono text-zinc-500">
+            <span>Tap any rating to grade</span>
+          </div>
 
-          {/* Right: Close button */}
+          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="retro-btn px-3 py-1.5 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold font-mono cursor-pointer shrink-0"
+            className="retro-btn px-3 py-1.5 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold font-mono cursor-pointer ml-auto shrink-0"
           >
             Close
           </button>
