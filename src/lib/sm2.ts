@@ -45,10 +45,14 @@ export function calculateNextReview(
   let newRep = currentRep;
   let newInterval = 1;
 
-  if (confidence === 'struggled') {
+  if (confidence === 'forgot') {
     newRep = 0;
     newInterval = 1;
-    newEase = Math.max(1.3, Math.round((currentEase - 0.2) * 100) / 100);
+    newEase = Math.max(1.3, Math.round((currentEase - 0.25) * 100) / 100);
+  } else if (confidence === 'struggled') {
+    newRep = 0;
+    newInterval = 1;
+    newEase = Math.max(1.3, Math.round((currentEase - 0.15) * 100) / 100);
   } else if (confidence === 'comfortable') {
     if (currentRep === 0) {
       newInterval = 1;

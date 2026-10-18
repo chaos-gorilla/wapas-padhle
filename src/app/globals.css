@@ -196,3 +196,35 @@ body {
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 50%, rgba(0, 0, 0, 0) 51%);
 }
 
+/* Card slide animations for study modal */
+@keyframes cardSlideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.97);
+  }
+}
+
+@keyframes cardSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(40px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.animate-card-slide-out {
+  animation: cardSlideOutLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-card-slide-in {
+  animation: cardSlideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+

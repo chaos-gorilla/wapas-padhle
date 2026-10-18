@@ -1,9 +1,10 @@
-export type RecallConfidence = 'struggled' | 'comfortable' | 'mastered';
+export type RecallConfidence = 'forgot' | 'struggled' | 'comfortable' | 'mastered';
 
 export interface ConceptItem {
   id: string;
   title: string;
   url?: string;            // Optional link to reference, article, doc, or video
+  urls?: string[];         // Optional multiple resource links
   category?: string;       // e.g., 'System Design', 'Computer Science', 'Mental Models'
   notes?: string;          // Optional user notes or key takeaway
   tags?: string[];         // e.g., ['system-design', 'distributed-systems', 'cognition']

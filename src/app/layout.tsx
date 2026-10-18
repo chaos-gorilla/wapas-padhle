@@ -28,6 +28,15 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Abhishek Rai', url: 'https://www.linkedin.com/in/abhishek-rai-atlassian/' }],
   creator: 'Scale with Rai',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png' },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
