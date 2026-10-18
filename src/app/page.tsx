@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useSyncExternalStore, useMemo } from 'react';
 import Link from 'next/link';
 import { ConceptItem, RecallConfidence, ReviewRecord, TelegramSettings } from '@/types';
 import {
@@ -16,8 +16,8 @@ import {
 import { getItemStatus } from '@/lib/sm2';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { TodayCard } from '@/components/TodayCard';
 import { QueueList, TabType } from '@/components/QueueList';
+import { ActiveRecallModal } from '@/components/ActiveRecallModal';
 import { AddConceptModal } from '@/components/AddConceptModal';
 import { CsvImportModal } from '@/components/CsvImportModal';
 import { TelegramModal } from '@/components/TelegramModal';
@@ -27,15 +27,14 @@ import {
   Layers,
   Compass,
   Calendar,
-  Columns2,
-  Maximize2,
   BarChart3,
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  Keyboard,
   ArrowRight,
   Lightbulb,
+  Plus,
+  Play,
 } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
@@ -84,17 +83,17 @@ export default function Home() {
   const [telegramSettings, setTelegramSettings] = useState<TelegramSettings>(() =>
     loadTelegramSettings()
   );
-  const [todayItem, setTodayItem] = useState<ConceptItem | null>(() =>
-    getRecommendedItem(loadItems(), loadReviews())
-  );
+
+  // Active Card for Recall Modal
+  const [modalItem, setModalItem] = useState<ConceptItem | null>(null);
+  const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [sessionReviewsCount, setSessionReviewsCount] = useState(0);
-  const [mobileTab, setMobileTab] = useState<'reviser' | 'queue'>('reviser');
   const [queueTab, setQueueTab] = useState<TabType>('due');
-  const [focusMode, setFocusMode] = useState(false); // Clean distraction-free card review
-  const [isGuideOpen, setIsGuideOpen] = useState(false); // Collapsed by default for zero distraction
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Sync theme preference on mount
   useEffect(() => {
@@ -117,22 +116,70 @@ export default function Home() {
     }
   };
 
-  const handleShuffle = () => {
-    setTodayItem(getRecommendedItem(items, reviews, todayItem?.id, true));
+  // Quick stats
+  const dueItems = useMemo(
+    () => items.filter((i) => getItemStatus(reviews[i.id]) === 'DUE_TODAY'),
+    [items, reviews]
+  );
+  const overdueItems = useMemo(
+    () => items.filter((i) => getItemStatus(reviews[i.id]) === 'OVERDUE'),
+    [items, reviews]
+  );
+  const dueCount = dueItems.length;
+  const backlogCount = overdueItems.length;
+
+  // Open modal on card select
+  const handleSelectItem = (item: ConceptItem) => {
+    setModalItem(item);
+    setIsStudyModalOpen(true);
   };
 
-  const handleRateToday = (confidence: RecallConfidence) => {
-    if (!todayItem) return;
-    const updatedRecord = recordReview(todayItem.id, confidence);
-    const newReviews = { ...reviews, [todayItem.id]: updatedRecord };
+  // Start study session with top recommended due card
+  const handleStartStudySession = () => {
+    playClickSound();
+    const recommended = getRecommendedItem(items, reviews);
+    if (recommended) {
+      setModalItem(recommended);
+      setIsStudyModalOpen(true);
+    }
+  };
+
+  // Modal navigation & rating handlers
+  const currentModalIndex = useMemo(() => {
+    if (!modalItem) return -1;
+    return items.findIndex((i) => i.id === modalItem.id);
+  }, [items, modalItem]);
+
+  const handleModalRate = (confidence: RecallConfidence) => {
+    if (!modalItem) return;
+    const updatedRecord = recordReview(modalItem.id, confidence);
+    const newReviews = { ...reviews, [modalItem.id]: updatedRecord };
     setReviews(newReviews);
     setSessionReviewsCount((prev) => prev + 1);
 
     // Pick next card recommendation
-    const nextRecommended = getRecommendedItem(items, newReviews, todayItem.id);
-    setTodayItem(nextRecommended);
+    const nextRecommended = getRecommendedItem(items, newReviews, modalItem.id);
+    setModalItem(nextRecommended);
   };
 
+  const handleModalShuffle = () => {
+    const shuffled = getRecommendedItem(items, reviews, modalItem?.id, true);
+    setModalItem(shuffled);
+  };
+
+  const handleModalPrev = () => {
+    if (currentModalIndex > 0) {
+      setModalItem(items[currentModalIndex - 1]);
+    }
+  };
+
+  const handleModalNext = () => {
+    if (currentModalIndex >= 0 && currentModalIndex < items.length - 1) {
+      setModalItem(items[currentModalIndex + 1]);
+    }
+  };
+
+  // Rate directly from list
   const handleRateItem = (itemId: string, confidence: RecallConfidence) => {
     const updatedRecord = recordReview(itemId, confidence);
     const newReviews = { ...reviews, [itemId]: updatedRecord };
@@ -140,23 +187,10 @@ export default function Home() {
     setSessionReviewsCount((prev) => prev + 1);
   };
 
-  const handleSelectItem = (item: ConceptItem) => {
-    setTodayItem(item);
-    setMobileTab('reviser');
-
-    // On mobile or small screens, scroll smoothly to the focus card
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
   const handleAddItem = (data: Omit<ConceptItem, 'id' | 'createdAt'>) => {
     const created = saveNewItem(data);
     const updated = [created, ...items];
     setItems(updated);
-    if (!todayItem) {
-      setTodayItem(created);
-    }
   };
 
   const handleBatchImportSuccess = (
@@ -165,16 +199,13 @@ export default function Home() {
   ) => {
     setItems(updatedItems);
     setReviews(updatedReviews);
-    if (!todayItem && updatedItems.length > 0) {
-      setTodayItem(getRecommendedItem(updatedItems, updatedReviews));
-    }
   };
 
   const handleDeleteItem = (id: string) => {
     const updated = deleteItem(id);
     setItems(updated);
-    if (todayItem?.id === id) {
-      setTodayItem(getRecommendedItem(updated, reviews));
+    if (modalItem?.id === id) {
+      setModalItem(getRecommendedItem(updated, reviews));
     }
   };
 
@@ -191,12 +222,6 @@ export default function Home() {
   if (!isMounted) {
     return null;
   }
-
-  // Quick stats
-  const dueItems = items.filter((i) => getItemStatus(reviews[i.id]) === 'DUE_TODAY');
-  const overdueItems = items.filter((i) => getItemStatus(reviews[i.id]) === 'OVERDUE');
-  const dueCount = dueItems.length;
-  const backlogCount = overdueItems.length;
 
   const todayFormattedShort = isMounted
     ? new Intl.DateTimeFormat('en-US', {
@@ -225,9 +250,9 @@ export default function Home() {
       />
 
       {/* Main Content Workspace */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-5 space-y-3 sm:space-y-4 relative z-10 min-w-0">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-5 relative z-10 min-w-0">
         {/* COMPACT MISSION STATUS & WORKSPACE CONTROLS BAR */}
-        <section className="retro-box w-full min-w-0 bg-white dark:bg-zinc-900 rounded-xl p-2.5 sm:p-3.5 border-2 border-zinc-900 dark:border-zinc-700 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]">
+        <section className="retro-box w-full min-w-0 bg-white dark:bg-zinc-900 rounded-xl p-3 sm:p-4 border-2 border-zinc-900 dark:border-zinc-700 shadow-[3px_3px_0px_0px_#18181b] dark:shadow-[3px_3px_0px_0px_#27272a]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             {/* Left: Quick Date & Status Indicators */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
@@ -237,14 +262,12 @@ export default function Home() {
                 <span>{todayFormattedShort}</span>
               </div>
 
-              {/* Due Today pill (Clicking filters queue and selects due card!) */}
+              {/* Due Today pill (Clicking filters queue to due cards!) */}
               <button
                 type="button"
                 onClick={() => {
                   playClickSound();
                   setQueueTab('due');
-                  if (dueItems.length > 0) setTodayItem(dueItems[0]);
-                  setMobileTab('reviser');
                 }}
                 className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg font-mono text-xs font-bold border shrink-0 cursor-pointer ${
                   dueCount > 0
@@ -257,18 +280,16 @@ export default function Home() {
                 <span>{dueCount > 0 ? `${dueCount} Due Today` : 'Queue Clear ✓'}</span>
               </button>
 
-              {/* Overdue Backlog pill (Clicking filters to backlog right on this page!) */}
+              {/* Overdue Backlog pill */}
               {backlogCount > 0 && (
                 <button
                   type="button"
                   onClick={() => {
                     playClickSound();
                     setQueueTab('backlog');
-                    if (overdueItems.length > 0) setTodayItem(overdueItems[0]);
-                    setMobileTab('reviser');
                   }}
                   className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-950 dark:text-rose-200 font-mono text-xs font-bold border border-rose-900 hover:bg-rose-200 dark:hover:bg-rose-900 transition-colors shrink-0 cursor-pointer"
-                  title="Click to view & study overdue cards directly"
+                  title="Click to view overdue backlog cards"
                 >
                   <span>⚠️ {backlogCount} Overdue</span>
                 </button>
@@ -281,33 +302,17 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right: Quick Action Controls */}
+            {/* Right: Primary Study Action & Tools */}
             <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-              {/* Focus Mode Toggle */}
+              {/* Start Recall Session CTA */}
               <button
                 type="button"
-                onClick={() => {
-                  playClickSound();
-                  setFocusMode((prev) => !prev);
-                }}
-                className={`retro-btn hidden md:inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold cursor-pointer ${
-                  focusMode
-                    ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-900 dark:border-zinc-700'
-                }`}
-                title={focusMode ? 'Switch to 2-Column Split View' : 'Focus solely on Active Flashcard'}
+                onClick={handleStartStudySession}
+                className="retro-btn inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-400 hover:bg-emerald-500 text-zinc-950 border border-zinc-900 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
+                title="Start active recall session in focused modal"
               >
-                {focusMode ? (
-                  <>
-                    <Columns2 className="w-3.5 h-3.5" />
-                    <span>Split View</span>
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>Focus Card</span>
-                  </>
-                )}
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Study Cards</span>
               </button>
 
               {/* Quick Guide Toggle */}
@@ -321,7 +326,7 @@ export default function Home() {
                 title="Toggle 3-Step Active Recall Guide"
               >
                 <HelpCircle className="w-3.5 h-3.5 text-amber-500" />
-                <span>Guide</span>
+                <span className="hidden sm:inline">Guide</span>
                 {isGuideOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
 
@@ -339,7 +344,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Helpful, Actionable Study Tip Banner */}
+          {/* Actionable Study Tip Banner */}
           <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400">
             <div className="flex items-center space-x-1.5 truncate">
               <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -350,7 +355,7 @@ export default function Home() {
                   </>
                 ) : dueCount > 0 ? (
                   <>
-                    <strong className="text-zinc-900 dark:text-white">Active Recall:</strong> Explain the invariant in your own words before pressing Space to reveal notes.
+                    <strong className="text-zinc-900 dark:text-white">Active Recall:</strong> Click any card below to open the recall station. Explain the invariant before revealing notes.
                   </>
                 ) : (
                   <>
@@ -360,21 +365,21 @@ export default function Home() {
               </span>
             </div>
             <span className="text-[10px] text-zinc-400 hidden md:inline shrink-0 ml-2">
-              [Space: flip • 1/2/3: rate • S: shuffle]
+              [Click card to open modal • Space: flip • 1/2/3: rate]
             </span>
           </div>
 
-          {/* Collapsible 3-Step Guide (Only opens on request!) */}
+          {/* Collapsible 3-Step Guide */}
           {isGuideOpen && (
             <div className="mt-3 pt-3 border-t-2 border-dashed border-zinc-900 dark:border-zinc-700">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs sm:text-sm">
                 <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-zinc-900 dark:border-zinc-700 rounded-lg">
                   <div className="font-mono font-bold text-amber-900 dark:text-amber-300 flex items-center space-x-1.5 mb-1">
                     <span className="px-1.5 py-0.2 rounded bg-amber-200 dark:bg-amber-900 border border-zinc-900 text-xs">01</span>
-                    <span>PICK FROM QUEUE</span>
+                    <span>CLICK ANY CARD</span>
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-300 text-xs leading-snug">
-                    Click any card. Due cards are highlighted at the top of your queue.
+                    Browse the list in Detailed or Condensed view. Click any card to launch the Focus Recall Station modal.
                   </p>
                 </div>
 
@@ -384,7 +389,7 @@ export default function Home() {
                     <span>TEST MEMORY (SPACE)</span>
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-300 text-xs leading-snug">
-                    Articulate the core invariant out loud, then press Space to reveal notes.
+                    Articulate the core invariant out loud, then press Space to reveal notes and verify your recall.
                   </p>
                 </div>
 
@@ -394,7 +399,7 @@ export default function Home() {
                     <span>RATE RECALL (1 / 2 / 3)</span>
                   </div>
                   <p className="text-zinc-700 dark:text-zinc-300 text-xs leading-snug">
-                    Rate 1 (Hard), 2 (Good), or 3 (Easy). SM-2 calculates your optimal next test.
+                    Rate 1 (Hard), 2 (Good), or 3 (Easy). SM-2 automatically calculates your optimal next test interval.
                   </p>
                 </div>
               </div>
@@ -402,134 +407,66 @@ export default function Home() {
           )}
         </section>
 
-        {/* Mobile View Tabs Switcher */}
-        <div className="lg:hidden sticky top-14 sm:top-16 z-20 flex items-center p-1 rounded-xl bg-zinc-100/95 dark:bg-zinc-900/95 backdrop-blur-md border-2 border-zinc-900 dark:border-zinc-700 shadow-[2px_2px_0px_0px_#18181b] dark:shadow-[2px_2px_0px_0px_#27272a] w-full">
-          <button
-            onClick={() => {
-              playClickSound();
-              setMobileTab('reviser');
-            }}
-            className={`flex-1 py-2 text-xs sm:text-sm font-mono font-bold rounded-lg transition-all cursor-pointer ${
-              mobileTab === 'reviser'
-                ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            🎯 Today&apos;s Reviser
-          </button>
-          <button
-            onClick={() => {
-              playClickSound();
-              setMobileTab('queue');
-            }}
-            className={`flex-1 py-2 text-xs sm:text-sm font-mono font-bold rounded-lg transition-all cursor-pointer ${
-              mobileTab === 'queue'
-                ? 'bg-amber-300 dark:bg-amber-400 text-zinc-950 border border-zinc-900 shadow-[1px_1px_0px_0px_#18181b]'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            📚 Cards Queue ({items.length})
-          </button>
-        </div>
-
-        {/* MAIN DUAL-PANE WORKSPACE: CONCEPT QUEUE & ACTIVE RECALL REVISER AT THE TOP */}
-        {focusMode ? (
-          /* Focus Mode: Centered Focus Flashcard */
-          <div className="max-w-3xl mx-auto space-y-4">
-            <TodayCard
-              item={todayItem}
-              reviewRecord={todayItem ? reviews[todayItem.id] : null}
-              onRate={handleRateToday}
-              onShuffle={handleShuffle}
-              onOpenAddModal={() => setIsAddModalOpen(true)}
-            />
-          </div>
-        ) : (
-          /* Split 2-Column Mode: Queue on Left, Sticky Focus Card on Right */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start w-full min-w-0">
-            {/* Left Column: Concept Queue & Cards */}
-            <div
-              className={`w-full min-w-0 lg:col-span-6 space-y-3 ${
-                mobileTab === 'queue' ? 'block' : 'hidden lg:block'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-0.5">
-                <div className="flex items-center space-x-2">
-                  <Layers className="w-4 h-4 text-emerald-500" />
-                  <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">
-                    Concept Queue &amp; Cards
-                  </h2>
-                </div>
-                <span className="text-xs text-zinc-400 font-mono">
-                  {items.length} card{items.length !== 1 ? 's' : ''} total
-                </span>
-              </div>
-
-              <QueueList
-                items={items}
-                reviews={reviews}
-                selectedItemId={todayItem?.id}
-                activeTab={queueTab}
-                onTabChange={setQueueTab}
-                onSelectItem={handleSelectItem}
-                onRateItem={handleRateItem}
-                onDeleteItem={handleDeleteItem}
-                onRescheduleBacklog={handleRescheduleBacklog}
-              />
+        {/* FEED SECTION: CONCEPT QUEUE & CARDS (DETAILED OR CONDENSED) */}
+        <section className="space-y-3.5 w-full">
+          {/* Feed Title & Quick Add Bar */}
+          <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center space-x-2">
+              <Layers className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+                Concept Queue &amp; Cards
+              </h2>
+              <span className="text-xs text-zinc-500 font-mono">
+                ({items.length} total)
+              </span>
             </div>
 
-            {/* Right Column: Sticky Active Recall Reviser */}
-            <div
-              className={`w-full min-w-0 lg:col-span-6 lg:sticky lg:top-20 space-y-3 ${
-                mobileTab === 'reviser' ? 'block' : 'hidden lg:block'
-              }`}
+            <button
+              type="button"
+              onClick={() => {
+                playClickSound();
+                setIsAddModalOpen(true);
+              }}
+              className="retro-btn flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-300 hover:bg-amber-400 text-zinc-950 cursor-pointer shadow-[2px_2px_0px_0px_#18181b]"
             >
-              <div className="flex items-center justify-between pb-0.5">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-4 h-4 text-emerald-500" />
-                  <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">
-                    Active Recall Reviser
-                  </h2>
-                </div>
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-                  {todayItem ? 'Ready to recall' : 'Queue clear'}
-                </span>
-              </div>
-
-              {/* Active Today Card */}
-              <TodayCard
-                item={todayItem}
-                reviewRecord={todayItem ? reviews[todayItem.id] : null}
-                onRate={handleRateToday}
-                onShuffle={handleShuffle}
-                onOpenAddModal={() => setIsAddModalOpen(true)}
-              />
-
-              {/* Keyboard Shortcuts Quick Bar */}
-              <div className="retro-box-sm hidden sm:flex items-center justify-between px-3 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-900 dark:border-zinc-700 text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
-                <div className="flex items-center space-x-1">
-                  <Keyboard className="w-3.5 h-3.5 text-zinc-500" />
-                  <span className="font-bold text-zinc-900 dark:text-zinc-200">SHORTCUTS:</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span><kbd className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 border">Space</kbd> Flip</span>
-                  <span>•</span>
-                  <span><kbd className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 border">1</kbd> Hard</span>
-                  <span>•</span>
-                  <span><kbd className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 border">2</kbd> Good</span>
-                  <span>•</span>
-                  <span><kbd className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 border">3</kbd> Easy</span>
-                  <span>•</span>
-                  <span><kbd className="px-1 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 border">S</kbd> Shuffle</span>
-                </div>
-              </div>
-            </div>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Card</span>
+            </button>
           </div>
-        )}
+
+          {/* Revamped QueueList with Condensed and Detailed Views */}
+          <QueueList
+            items={items}
+            reviews={reviews}
+            selectedItemId={modalItem?.id}
+            activeTab={queueTab}
+            onTabChange={setQueueTab}
+            onSelectItem={handleSelectItem}
+            onRateItem={handleRateItem}
+            onDeleteItem={handleDeleteItem}
+            onRescheduleBacklog={handleRescheduleBacklog}
+          />
+        </section>
       </main>
 
       {/* Footer */}
       <Footer />
+
+      {/* Active Recall / Focus Station Popup Modal */}
+      <ActiveRecallModal
+        isOpen={isStudyModalOpen}
+        item={modalItem}
+        reviewRecord={modalItem ? reviews[modalItem.id] : null}
+        currentIndex={currentModalIndex >= 0 ? currentModalIndex : undefined}
+        totalCount={items.length}
+        hasPrev={currentModalIndex > 0}
+        hasNext={currentModalIndex >= 0 && currentModalIndex < items.length - 1}
+        onPrev={handleModalPrev}
+        onNext={handleModalNext}
+        onShuffle={handleModalShuffle}
+        onClose={() => setIsStudyModalOpen(false)}
+        onRate={handleModalRate}
+      />
 
       {/* Add Concept Modal */}
       <AddConceptModal
