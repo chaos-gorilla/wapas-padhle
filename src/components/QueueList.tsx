@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ConceptItem, RecallConfidence, ReviewRecord } from '@/types';
 import { getItemStatus } from '@/lib/sm2';
 import {
@@ -22,6 +22,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { playClickSound, playMasteredChime } from '@/lib/sound';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 
 export type TabType = 'all' | 'due' | 'backlog' | 'upcoming';
 export type SortType = 'due_asc' | 'interval_desc' | 'title_asc' | 'created_desc';
@@ -59,7 +60,6 @@ export function QueueList({
   selectedCategory: controlledCategory,
   onCategoryChange,
   sortBy: controlledSort,
-  onSortChange,
   viewMode: controlledViewMode,
   onViewModeChange,
   onSelectItem,
@@ -93,30 +93,24 @@ export function QueueList({
   };
 
   // Sort state (controlled vs internal)
-  const [internalSort, setInternalSort] = useState<SortType>('due_asc');
+  const [internalSort] = useState<SortType>('due_asc');
   const sortBy = controlledSort !== undefined ? controlledSort : internalSort;
-  const setSortBy = (s: SortType) => {
-    if (onSortChange) onSortChange(s);
-    setInternalSort(s);
-  };
 
   // View mode state (controlled vs internal)
-  const [internalViewMode, setInternalViewMode] = useState<ViewMode>('condensed');
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
+      if (savedMode === 'detailed' || savedMode === 'condensed') {
+        return savedMode;
+      }
+    }
+    return 'condensed';
+  });
   const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
   const setViewMode = (m: ViewMode) => {
     if (onViewModeChange) onViewModeChange(m);
     setInternalViewMode(m);
   };
-
-  // Load view mode preference from localStorage on mount if uncontrolled
-  useEffect(() => {
-    if (controlledViewMode === undefined) {
-      const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
-      if (savedMode === 'detailed' || savedMode === 'condensed') {
-        setViewMode(savedMode);
-      }
-    }
-  }, [controlledViewMode]);
 
   const handleToggleViewMode = (mode: ViewMode) => {
     playClickSound();
@@ -205,10 +199,24 @@ export function QueueList({
     onRateItem(itemId, confidence);
   };
 
-  const handleDelete = (e: React.MouseEvent, itemId: string) => {
+  // Delete confirmation state
+  const [itemToDelete, setItemToDelete] = useState<ConceptItem | null>(null);
+
+  const handleDeleteClick = (e: React.MouseEvent, item: ConceptItem) => {
     e.stopPropagation();
     playClickSound();
-    onDeleteItem(itemId);
+    setItemToDelete(item);
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete) {
+      onDeleteItem(itemToDelete.id);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setItemToDelete(null);
   };
 
   // Active filters count for mobile indicator
@@ -587,7 +595,7 @@ export function QueueList({
 
                       <button
                         type="button"
-                        onClick={(e) => handleDelete(e, item.id)}
+                        onClick={(e) => handleDeleteClick(e, item)}
                         className="retro-btn p-1.5 rounded text-zinc-500 hover:text-rose-600 bg-white dark:bg-zinc-800 border border-zinc-900/30 cursor-pointer"
                         title="Delete card"
                       >
@@ -694,7 +702,7 @@ export function QueueList({
 
                       <button
                         type="button"
-                        onClick={(e) => handleDelete(e, item.id)}
+                        onClick={(e) => handleDeleteClick(e, item)}
                         className="p-1 rounded text-zinc-400 hover:text-rose-600 cursor-pointer"
                         title="Delete card"
                       >
@@ -781,7 +789,7 @@ export function QueueList({
                     {/* Delete Button */}
                     <button
                       type="button"
-                      onClick={(e) => handleDelete(e, item.id)}
+                      onClick={(e) => handleDeleteClick(e, item)}
                       className="p-1 rounded text-zinc-400 hover:text-rose-600 cursor-pointer"
                       title="Delete card"
                     >
@@ -794,6 +802,14 @@ export function QueueList({
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        item={itemToDelete}
+        isOpen={Boolean(itemToDelete)}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 }

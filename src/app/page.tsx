@@ -100,16 +100,16 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortType>('due_asc');
-  const [viewMode, setViewMode] = useState<ViewMode>('condensed');
-  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
-
-  // Sync viewMode preference with localStorage
-  useEffect(() => {
-    const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
-    if (savedMode === 'detailed' || savedMode === 'condensed') {
-      setViewMode(savedMode);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('wapas_view_mode') as ViewMode | null;
+      if (savedMode === 'detailed' || savedMode === 'condensed') {
+        return savedMode;
+      }
     }
-  }, []);
+    return 'condensed';
+  });
+  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
